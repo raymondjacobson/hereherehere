@@ -1,0 +1,39 @@
+name: Deploy web to Cloudflare Pages
+
+# Auto-deploy the static landing site on every push to main that touches it.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/deploy-web.yml'
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build site
+        run: npm run web:build
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy apps/web/dist --project-name=hereherehere --branch=main

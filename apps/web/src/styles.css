@@ -1,5 +1,5 @@
 :root {
-  --bg: #fbf7f1;
+  --bg: #fbf9f5;
   --surface: #ffffff;
   --text: #211c16;
   --text-secondary: #6b6358;
@@ -8,18 +8,8 @@
   --blue: #a9c9f0;
   --yellow: #f6d98a;
   --accent: #f19db6;
+  --muted: #c4bdb1;
   --radius: 22px;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #17140f;
-    --surface: #211c16;
-    --text: #f5efe6;
-    --text-secondary: #b6ad9f;
-    --border: #352e25;
-    --accent: #e7a6bc;
-  }
 }
 
 * {
@@ -68,6 +58,34 @@ h1 {
   font-size: 19px;
   color: var(--text-secondary);
   margin-top: 16px;
+}
+
+.hero-wrap {
+  position: relative;
+  width: min(100%, 380px);
+  margin: -8px auto 4px;
+}
+
+.hero {
+  width: 100%;
+  height: auto;
+  display: block;
+  /* Soft-edge the image, matching the app's onboarding vignette. */
+  -webkit-mask-image: radial-gradient(125% 115% at 50% 42%, #000 48%, transparent 78%);
+  mask-image: radial-gradient(125% 115% at 50% 42%, #000 48%, transparent 78%);
+}
+
+/* Paint the page background back in around the edges so the image
+   melts into it on every side (a real color vignette, not just a fade). */
+.hero-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    closest-side at 50% 44%,
+    transparent 52%,
+    var(--bg) 84%
+  );
 }
 
 .blob {
@@ -173,4 +191,95 @@ footer {
   color: var(--text-secondary);
   font-weight: 600;
   margin-top: 4px;
+}
+
+/* --- Landing page: downloads, support, footer --- */
+
+.downloads {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.btn.store {
+  width: auto;
+  gap: 10px;
+  padding: 12px 18px;
+  background: var(--text);
+  color: var(--bg);
+}
+
+.btn.store svg {
+  flex: 0 0 auto;
+}
+
+.store-txt {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.1;
+  font-size: 17px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.store-txt small {
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.8;
+  letter-spacing: 0.01em;
+}
+
+.btn.store.disabled {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  color: var(--muted);
+  cursor: default;
+  pointer-events: none;
+}
+
+.btn.store.disabled svg {
+  opacity: 0.45;
+  filter: grayscale(1);
+}
+
+.coming-soon {
+  margin-top: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.support {
+  margin-top: 28px;
+  text-align: left;
+}
+
+.support .btn.donate {
+  margin-top: 16px;
+}
+
+footer a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+footer a:hover {
+  text-decoration: underline;
+}
+
+footer .dot {
+  margin: 0 6px;
+  opacity: 0.6;
+}
+
+@media (max-width: 420px) {
+  .downloads {
+    grid-template-columns: 1fr;
+  }
 }
