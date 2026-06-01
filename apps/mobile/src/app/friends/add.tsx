@@ -55,7 +55,7 @@ export default function AddFriendScreen() {
               {params.n} added
             </Text>
             <Text variant="body" color="textSecondary" center>
-              They need to add you too. To see each other’s heres, both people need to add each other.
+              They need to add you too. To see each other’s messages, both people need to add each other.
             </Text>
           </>
         ) : (

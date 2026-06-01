@@ -197,7 +197,7 @@ export default function ComposeScreen() {
                 <View style={{ flex: 1, justifyContent: 'center', gap: spacing.lg, alignItems: 'center' }}>
                   <Text style={{ fontSize: 64 }}>🍾</Text>
                   <Text variant="title" weight="extrabold" center>
-                    Your here is ready to move through the crowd.
+                    Your message is ready to move through the crowd.
                   </Text>
                   <Text variant="body" color="textSecondary" center>
                     It’ll pass to friends when their phones come near yours.
@@ -206,7 +206,7 @@ export default function ComposeScreen() {
               ) : (
                 <>
                   <Text variant="hero" weight="extrabold">
-                    Post my here
+                    Post my message
                   </Text>
                   <Card>
                     <Text variant="heading" weight="bold">
@@ -234,7 +234,7 @@ export default function ComposeScreen() {
           {step === 'where' && <Button title="Next" big onPress={next} disabled={!canWhere} />}
           {step === 'until' && <Button title="Next" big onPress={next} disabled={!canUntil} />}
           {step === 'note' && <Button title={note.trim() ? 'Next' : 'Skip'} big onPress={next} />}
-          {step === 'post' && !posted && <Button title="Post my here" big onPress={post} />}
+          {step === 'post' && !posted && <Button title="Post my message" big onPress={post} />}
           {step === 'post' && posted && (
             <>
               <Button title="Refresh the crowd now" big onPress={() => router.replace('/refresh')} />

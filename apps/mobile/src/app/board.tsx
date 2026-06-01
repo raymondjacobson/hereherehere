@@ -93,7 +93,7 @@ export default function BoardScreen() {
       ) : (
         <Card onPress={() => router.push('/compose')} muted>
           <Text variant="heading" weight="bold">
-            Post your first here
+            Post your first message
           </Text>
           <Text variant="callout" color="textSecondary" style={{ marginTop: spacing.xs }}>
             Tell your friends where you’ll be and until when.
@@ -103,7 +103,7 @@ export default function BoardScreen() {
 
       {board.primary.length > 0 ? (
         <Text variant="meta" weight="bold" color="textSecondary" style={{ marginTop: spacing.sm }}>
-          FRIENDS · BY LATEST HERE
+          FRIENDS · BY LATEST MESSAGE
         </Text>
       ) : null}
     </View>
@@ -113,7 +113,7 @@ export default function BoardScreen() {
     <View style={{ paddingTop: spacing.lg, gap: spacing.lg }}>
       {board.primary.length === 0 && friends.length > 0 ? (
         <Text variant="callout" color="textSecondary" center style={{ paddingVertical: spacing.lg }}>
-          No recent heres yet. Pull a crowd refresh to check.
+          No recent messages yet. Pull a crowd refresh to check.
         </Text>
       ) : null}
 
@@ -123,7 +123,7 @@ export default function BoardScreen() {
             Add your friends
           </Text>
           <Text variant="callout" color="textSecondary" style={{ marginTop: spacing.xs, marginBottom: spacing.lg }}>
-            Scan each other’s friend codes to see each other’s heres.
+            Scan each other’s friend codes to see each other’s messages.
           </Text>
           <Button title="Open friend code" onPress={() => router.push('/friends/code')} />
         </Card>
@@ -140,7 +140,7 @@ export default function BoardScreen() {
               opacity: pressed ? 0.85 : 1,
             })}>
             <Text variant="callout" weight="semibold" color="textSecondary">
-              {showQuiet ? 'Hide' : 'Show'} {board.quiet.length} friend{board.quiet.length === 1 ? '' : 's'} without recent heres
+              {showQuiet ? 'Hide' : 'Show'} {board.quiet.length} friend{board.quiet.length === 1 ? '' : 's'} without recent messages
             </Text>
           </Pressable>
           {showQuiet
@@ -199,7 +199,7 @@ export default function BoardScreen() {
           borderTopColor: c.border,
         }}>
         <Button title="Refresh the crowd" variant="secondary" onPress={() => router.push('/refresh')} />
-        <Button title="Post here" big onPress={() => router.push('/compose')} />
+        <Button title="Post a message" big onPress={() => router.push('/compose')} />
       </View>
     </View>
   );

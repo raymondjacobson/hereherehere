@@ -108,7 +108,7 @@ export default function SettingsScreen() {
         <Section title="Try it out">
           <Card muted>
             <Text variant="callout" color="textSecondary" style={{ marginBottom: spacing.md }}>
-              This build uses a simulated mesh. Add a few demo friends, then run a crowd refresh to watch their heres arrive — through the real encryption path.
+              This build uses a simulated mesh. Add a few demo friends, then run a crowd refresh to watch their messages arrive — through the real encryption path.
             </Text>
             <Button
               title={seeded ? 'Demo friends added ✓' : 'Add demo friends'}
@@ -125,7 +125,7 @@ export default function SettingsScreen() {
         <Section title="Privacy">
           <Card muted>
             <Text variant="callout" color="textSecondary">
-              Your private key never leaves this device. There’s no account, no server, and no GPS. Friends you add can read your heres; other phones can only carry them.
+              Your private key never leaves this device. There’s no account, no server, and no GPS. Friends you add can read your messages; other phones can only carry them.
             </Text>
           </Card>
         </Section>

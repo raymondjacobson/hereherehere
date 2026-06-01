@@ -15,7 +15,7 @@ const SESSION_MS = 25_000;
 
 const PHASE_TEXT: Record<SessionPhase, string> = {
   scanning: 'Looking for nearby phones…',
-  trading: 'Trading heres…',
+  trading: 'Trading messages…',
   checking: 'Checking for your friends…',
   updating: 'Updating your board…',
   done: 'Done',
@@ -106,7 +106,7 @@ export default function RefreshScreen() {
                 Refreshing the crowd
               </Text>
               <Text variant="body" color="textSecondary" center>
-                Keep this open. Your phone is trading heres nearby.
+                Keep this open. Your phone is trading messages nearby.
               </Text>
               <Text variant="callout" weight="semibold" color="accent" center style={{ marginTop: spacing.sm }}>
                 {PHASE_TEXT[phase]}
@@ -117,7 +117,7 @@ export default function RefreshScreen() {
           <View style={{ alignItems: 'center', gap: spacing.lg, alignSelf: 'stretch' }}>
             <Text style={{ fontSize: 56 }}>{updates.length ? '✨' : '🌙'}</Text>
             <Text variant="title" weight="extrabold" center>
-              {updates.length ? `${updates.length} new here${updates.length === 1 ? '' : 's'}` : 'No new heres this time.'}
+              {updates.length ? `${updates.length} new message${updates.length === 1 ? '' : 's'}` : 'No new messages this time.'}
             </Text>
             <View style={{ alignSelf: 'stretch', gap: spacing.sm }}>
               {updates.map((u) => (

@@ -58,7 +58,7 @@ export default function FriendCodeScreen() {
           </Text>
         </View>
         <Text variant="callout" color="textSecondary" center>
-          Friend codes are one-way. To see each other’s heres, both people need to add each other.
+          Friend codes are one-way. To see each other’s messages, both people need to add each other.
         </Text>
       </View>
 
