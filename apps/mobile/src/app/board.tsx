@@ -102,6 +102,8 @@ export default function BoardScreen() {
             state={now < ownHere.endsAt ? 'active' : 'expired'}
             now={now}
             isSelf
+            emoji={identity.emoji}
+            seed={identity.signPk}
           />
         </Pressable>
       ) : (
@@ -155,10 +157,19 @@ export default function BoardScreen() {
                     here={entry.here}
                     state="expired"
                     now={now}
+                    emoji={entry.friend.emoji}
+                    seed={entry.friend.id}
                   />
                 ) : (
                   <View key={entry.friend.id} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.lg, paddingHorizontal: spacing.sm }}>
-                    <Avatar name={entry.friend.displayName} colorIndex={entry.friend.colorIndex} size={40} muted />
+                    <Avatar
+                      name={entry.friend.displayName}
+                      colorIndex={entry.friend.colorIndex}
+                      size={40}
+                      muted
+                      emoji={entry.friend.emoji}
+                      seed={entry.friend.id}
+                    />
                     <Text variant="body" weight="medium" color="textSecondary">
                       {entry.friend.displayName}
                     </Text>
@@ -185,6 +196,8 @@ export default function BoardScreen() {
             here={item.here}
             state={item.state}
             now={now}
+            emoji={item.friend.emoji}
+            seed={item.friend.id}
           />
         )}
         ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}

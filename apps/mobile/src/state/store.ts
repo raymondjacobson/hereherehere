@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { generateKeyPairSet, friendIdOf } from '@/crypto/keys';
+import { defaultEmojiFor } from '@/data/emoji';
 import { buildPacketsForHere, isPacketValid, tryOpenHere } from '@/domain/packet';
 import type {
   EventPack,
@@ -41,6 +42,7 @@ type AppState = {
   // identity / onboarding
   createIdentity: (displayName: string) => Promise<void>;
   setDisplayName: (name: string) => void;
+  setEmoji: (emoji: string) => void;
   completeOnboarding: () => void;
 
   // permissions
@@ -99,6 +101,9 @@ export const useStore = create<AppState>()(
         await storeSecrets(keys);
         const identity: LocalIdentity = {
           displayName: displayName.trim(),
+          // Seed a pleasant default so the avatar is never an empty letter;
+          // the user can change it in the next onboarding step or in settings.
+          emoji: defaultEmojiFor(keys.signPk),
           signPk: keys.signPk,
           boxPk: keys.boxPk,
           createdAt: Date.now(),
@@ -113,6 +118,12 @@ export const useStore = create<AppState>()(
         set({ identity: { ...id, displayName: name.trim() } });
       },
 
+      setEmoji: (emoji) => {
+        const id = get().identity;
+        if (!id) return;
+        set({ identity: { ...id, emoji } });
+      },
+
       completeOnboarding: () => set({ onboardingComplete: true }),
 
       setBluetoothEnabled: (v) => set({ bluetoothEnabled: v }),
@@ -123,16 +134,17 @@ export const useStore = create<AppState>()(
         const id = friendIdOf({ signPk: payload.s });
         const existing = get().friends.find((f) => f.id === id);
         if (existing) {
-          // update display name if changed
+          // Re-scanning refreshes the name and emoji the friend chose.
           const friends = get().friends.map((f) =>
-            f.id === id ? { ...f, displayName: payload.n } : f,
+            f.id === id ? { ...f, displayName: payload.n, emoji: payload.e } : f,
           );
           set({ friends });
-          return { ...existing, displayName: payload.n };
+          return { ...existing, displayName: payload.n, emoji: payload.e };
         }
         const friend: Friend = {
           id,
           displayName: payload.n,
+          emoji: payload.e,
           signPk: payload.s,
           boxPk: payload.b,
           addedAt: Date.now(),

@@ -21,7 +21,7 @@ export default function NameScreen() {
     setBusy(true);
     try {
       await createIdentity(name);
-      router.push('/onboarding/explainer');
+      router.push('/onboarding/avatar');
     } finally {
       setBusy(false);
     }

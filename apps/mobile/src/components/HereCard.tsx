@@ -14,9 +14,11 @@ type Props = {
   state: HereState;
   now: number;
   isSelf?: boolean;
+  emoji?: string;
+  seed?: string;
 };
 
-export function HereCard({ name, colorIndex, here, state, now, isSelf }: Props) {
+export function HereCard({ name, colorIndex, here, state, now, isSelf, emoji, seed }: Props) {
   const expired = state === 'expired';
   const nameColor = expired ? 'expired' : 'text';
   const whereColor = expired ? 'expired' : 'text';
@@ -25,7 +27,7 @@ export function HereCard({ name, colorIndex, here, state, now, isSelf }: Props) 
   return (
     <Card muted={expired}>
       <View style={{ flexDirection: 'row', gap: spacing.lg, alignItems: 'flex-start' }}>
-        <Avatar name={name} colorIndex={colorIndex} muted={expired} />
+        <Avatar name={name} colorIndex={colorIndex} muted={expired} emoji={emoji} seed={seed} />
         <View style={{ flex: 1, gap: 2 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
             <Text variant="heading" weight="bold" color={nameColor}>
