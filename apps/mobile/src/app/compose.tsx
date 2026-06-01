@@ -215,12 +215,12 @@ export default function ComposeScreen() {
                 </Text>
               </Pressable>
             </View>
-            <DateTimePicker value={pickerValue} mode="time" display="spinner" onChange={onPickerChange} themeVariant="light" />
+            <DateTimePicker value={pickerValue} mode="time" display="spinner" is24Hour={false} locale="en_US" onChange={onPickerChange} themeVariant="light" />
           </Pressable>
         </Pressable>
       ) : null}
       {pickerFor && Platform.OS !== 'ios' ? (
-        <DateTimePicker value={pickerValue} mode="time" onChange={onPickerChange} />
+        <DateTimePicker value={pickerValue} mode="time" is24Hour={false} onChange={onPickerChange} />
       ) : null}
     </View>
   );
