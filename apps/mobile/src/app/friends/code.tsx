@@ -7,6 +7,7 @@ import { Pressable } from 'react-native';
 import { Text } from '@/components/Text';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { Avatar } from '@/components/Avatar';
 import { spacing } from '@/theme/theme';
 import { useTheme } from '@/theme/useTheme';
 import { useStore } from '@/state/store';
@@ -49,7 +50,14 @@ export default function FriendCodeScreen() {
         <View style={{ backgroundColor: '#FFFFFF', padding: spacing.xl, borderRadius: 24 }}>
           <QRCode value={link} size={232} color="#211C16" backgroundColor="#FFFFFF" />
         </View>
-        <View style={{ alignItems: 'center', gap: spacing.xs }}>
+        <View style={{ alignItems: 'center', gap: spacing.sm }}>
+          <Avatar
+            name={identity.displayName}
+            colorIndex={0}
+            size={64}
+            emoji={identity.emoji}
+            seed={identity.signPk}
+          />
           <Text variant="title" weight="extrabold">
             {identity.displayName}
           </Text>

@@ -27,7 +27,7 @@ export default function ScanScreen() {
     handled.current = true;
     router.replace({
       pathname: '/friends/add',
-      params: { n: payload.n, s: payload.s, b: payload.b, t: String(payload.t ?? 0) },
+      params: { n: payload.n, e: payload.e ?? '', s: payload.s, b: payload.b, t: String(payload.t ?? 0) },
     });
   }
 

@@ -12,7 +12,7 @@ import type { FriendCodePayload } from '@/domain/types';
 
 export default function AddFriendScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ n: string; s: string; b: string; t: string }>();
+  const params = useLocalSearchParams<{ n: string; e: string; s: string; b: string; t: string }>();
   const addFriend = useStore((s) => s.addFriend);
   const identity = useStore((s) => s.identity);
   const [added, setAdded] = useState(false);
@@ -23,6 +23,7 @@ export default function AddFriendScreen() {
     const payload: FriendCodePayload = {
       v: 1,
       n: params.n ?? 'Friend',
+      e: params.e || undefined,
       s: params.s,
       b: params.b,
       t: Number(params.t) || Date.now(),
@@ -60,7 +61,7 @@ export default function AddFriendScreen() {
           </>
         ) : (
           <>
-            <Avatar name={params.n ?? '?'} colorIndex={0} size={84} />
+            <Avatar name={params.n ?? '?'} colorIndex={0} size={84} emoji={params.e || undefined} seed={params.s} />
             <View style={{ alignItems: 'center', gap: spacing.xs }}>
               <Text variant="title" weight="extrabold">
                 {params.n}

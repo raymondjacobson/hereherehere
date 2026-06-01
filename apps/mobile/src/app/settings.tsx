@@ -6,6 +6,8 @@ import { Text } from '@/components/Text';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { TextField } from '@/components/TextField';
+import { Avatar } from '@/components/Avatar';
+import { EmojiPicker } from '@/components/EmojiPicker';
 import { PermissionItem } from '@/components/PermissionItem';
 import { spacing } from '@/theme/theme';
 import { useTheme } from '@/theme/useTheme';
@@ -33,6 +35,7 @@ export default function SettingsScreen() {
   const friends = useStore((s) => s.friends);
   const installedPacks = useStore((s) => s.installedPacks);
   const setDisplayName = useStore((s) => s.setDisplayName);
+  const setEmoji = useStore((s) => s.setEmoji);
   const installPack = useStore((s) => s.installPack);
   const uninstallPack = useStore((s) => s.uninstallPack);
   const seedDemoFriends = useStore((s) => s.seedDemoFriends);
@@ -65,19 +68,33 @@ export default function SettingsScreen() {
       <ScrollView
         contentContainerStyle={{ paddingHorizontal: spacing.xl, gap: spacing.xxl, paddingBottom: insets.bottom + spacing.xxl }}
         showsVerticalScrollIndicator={false}>
-        <Section title="Your name">
-          <TextField
-            value={name}
-            onChangeText={(t) => {
-              setName(t);
-              // Commit live so the edit isn't lost if the field never blurs
-              // (e.g. tapping "Done" closes the screen without blurring).
-              if (t.trim()) setDisplayName(t);
-            }}
-            placeholder="your name"
-            autoCapitalize="words"
-            maxLength={24}
-          />
+        <Section title="You">
+          <Card>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.lg }}>
+              <Avatar
+                name={name}
+                colorIndex={0}
+                size={56}
+                emoji={identity?.emoji}
+                seed={identity?.signPk}
+              />
+              <View style={{ flex: 1 }}>
+                <TextField
+                  value={name}
+                  onChangeText={(t) => {
+                    setName(t);
+                    // Commit live so the edit isn't lost if the field never blurs
+                    // (e.g. tapping "Done" closes the screen without blurring).
+                    if (t.trim()) setDisplayName(t);
+                  }}
+                  placeholder="your name"
+                  autoCapitalize="words"
+                  maxLength={24}
+                />
+              </View>
+            </View>
+          </Card>
+          <EmojiPicker value={identity?.emoji} onSelect={setEmoji} />
         </Section>
 
         <Section title="Friends">
