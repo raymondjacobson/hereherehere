@@ -31,8 +31,7 @@ const PAGES: Page[] = [
     body: 'Your heres are encrypted so only friends you’ve added can see them. Other phones may help carry them, but they can’t read them.',
   },
   {
-    emoji: '🎡',
-    tint: 'yellow',
+    image: require('../../../assets/onboarding/refresh-crowd.png'),
     title: 'Open to refresh the crowd',
     body: 'Phones can only pass heres while the app is open. During the event, we’ll remind everyone around the same time to open hereherehere for a quick crowd refresh.',
   },
