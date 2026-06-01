@@ -67,12 +67,13 @@ function render() {
   store.href = STORE_URL;
 
   if (!payload) {
-    ($('blob') as HTMLElement).textContent = '🍾';
-    $('title').textContent = 'hereherehere';
+    ($('blob') as HTMLElement).textContent = '👋';
+    $('title').textContent = 'Friend links';
     $('lede').textContent =
-      'This is a friend link, but it looks incomplete. Ask your friend to share their code again.';
+      "When someone taps “Add me” in hereherehere, it creates a personal link. Open that link on your phone and it adds them as a friend. It looks like you’re here without one.";
     open.style.display = 'none';
-    store.textContent = 'About hereherehere';
+    store.textContent = 'How it works';
+    store.href = '/how/';
     return;
   }
 

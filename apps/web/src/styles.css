@@ -62,7 +62,7 @@ h1 {
 
 .hero-wrap {
   position: relative;
-  width: min(100%, 380px);
+  width: min(100%, 420px);
   margin: -8px auto 4px;
 }
 
@@ -70,9 +70,10 @@ h1 {
   width: 100%;
   height: auto;
   display: block;
-  /* Soft-edge the image, matching the app's onboarding vignette. */
-  -webkit-mask-image: radial-gradient(125% 115% at 50% 42%, #000 48%, transparent 78%);
-  mask-image: radial-gradient(125% 115% at 50% 42%, #000 48%, transparent 78%);
+  /* Soft-edge the image, matching the app's onboarding vignette.
+     The solid region is kept wide so most of the scene stays visible. */
+  -webkit-mask-image: radial-gradient(130% 120% at 50% 44%, #000 66%, transparent 94%);
+  mask-image: radial-gradient(130% 120% at 50% 44%, #000 66%, transparent 94%);
 }
 
 /* Paint the page background back in around the edges so the image
@@ -82,9 +83,9 @@ h1 {
   inset: 0;
   pointer-events: none;
   background: radial-gradient(
-    closest-side at 50% 44%,
-    transparent 52%,
-    var(--bg) 84%
+    closest-side at 50% 46%,
+    transparent 70%,
+    var(--bg) 98%
   );
 }
 
@@ -282,4 +283,57 @@ footer .dot {
   .downloads {
     grid-template-columns: 1fr;
   }
+}
+
+/* --- How it works page --- */
+
+.back {
+  align-self: flex-start;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.back:hover {
+  color: var(--text);
+}
+
+.scene {
+  margin-top: 40px;
+  text-align: center;
+}
+
+.scene:first-of-type {
+  margin-top: 24px;
+}
+
+.scene .hero-wrap {
+  margin: 0 auto 8px;
+}
+
+.scene .step-num {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.scene h2 {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin-top: 4px;
+}
+
+.scene p {
+  font-size: 17px;
+  color: var(--text-secondary);
+  margin-top: 8px;
+  max-width: 30em;
+  margin-left: auto;
+  margin-right: auto;
 }
