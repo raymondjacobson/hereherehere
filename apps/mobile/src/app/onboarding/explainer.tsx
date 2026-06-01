@@ -26,8 +26,7 @@ const PAGES: Page[] = [
     body: 'hereherehere lets you share where you’ll be when cell and wifi are down. It uses nearby phones to carry your here through the crowd — like a message in a bottle.',
   },
   {
-    emoji: '🔒',
-    tint: 'pink',
+    image: require('../../../assets/onboarding/carry-private.png'),
     title: 'Only your friends can read it',
     body: 'Your heres are encrypted so only friends you’ve added can see them. Other phones may help carry them, but they can’t read them.',
   },
