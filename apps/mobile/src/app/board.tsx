@@ -153,11 +153,8 @@ export default function BoardScreen() {
   const footer = (
     <View style={{ paddingTop: spacing.lg, gap: spacing.lg }}>
       {board.primary.length === 0 ? (
-        <View style={{ alignItems: 'center', gap: spacing.sm, paddingTop: spacing.md }}>
+        <View style={{ alignItems: 'center', paddingTop: spacing.md }}>
           <ImageHero source={require('../../assets/states/empty-board.png')} size={Math.min(width * 0.72, 300)} />
-          <Text variant="callout" color="textSecondary" center style={{ paddingHorizontal: spacing.lg }}>
-            Nothing here yet
-          </Text>
         </View>
       ) : null}
 
