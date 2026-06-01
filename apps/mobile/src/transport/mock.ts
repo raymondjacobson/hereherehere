@@ -152,7 +152,6 @@ export class MockTransport implements Transport {
 
     let elapsed = 0;
     for (const step of steps) {
-      const start = elapsed;
       const slice = 60; // ms granularity
       for (let t = 0; t < step.ms; t += slice) {
         if (this.aborted) break;
@@ -169,12 +168,15 @@ export class MockTransport implements Transport {
             this.emit(packets);
           }
         }
+
+        // Report progress on every tick so the countdown ticks down smoothly
+        // instead of jumping once per phase.
+        onProgress?.({
+          phase: step.phase,
+          fraction: Math.min(1, elapsed / durationMs),
+          peersSeen,
+        });
       }
-      onProgress?.({
-        phase: step.phase,
-        fraction: Math.min(1, (start + step.ms) / durationMs),
-        peersSeen,
-      });
       if (this.aborted) break;
     }
 
