@@ -20,7 +20,7 @@ export const EMOJI_GROUPS: { label: string; emojis: string[] }[] = [
   },
   {
     label: 'Nature',
-    emojis: ['🌸', '🌻', '🌵', '🍄', '🌴', '🔥', '⭐️', '🌈', '🌊', '❄️', '🍀', '🌙'],
+    emojis: ['🌸', '🌻', '🌵', '🍄', '🌴', '🔥', '⭐️', '🌈', '🌊', '❄️', '🍀'],
   },
   {
     label: 'Food',
