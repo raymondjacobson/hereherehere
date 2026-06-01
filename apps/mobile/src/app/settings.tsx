@@ -6,10 +6,12 @@ import { Text } from '@/components/Text';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { TextField } from '@/components/TextField';
+import { PermissionItem } from '@/components/PermissionItem';
 import { spacing } from '@/theme/theme';
 import { useTheme } from '@/theme/useTheme';
 import { useStore } from '@/state/store';
 import { AVAILABLE_PACKS } from '@/data/packs/portola';
+import { PERMISSIONS } from '@/permissions/catalog';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -87,6 +89,14 @@ export default function SettingsScreen() {
               Tap to show your friend code or scan one
             </Text>
           </Card>
+        </Section>
+
+        <Section title="Permissions">
+          <View style={{ gap: spacing.xxl, marginTop: spacing.xs }}>
+            {PERMISSIONS.map((info) => (
+              <PermissionItem key={info.key} info={info} imageSize={160} />
+            ))}
+          </View>
         </Section>
 
         <Section title="Event packs">

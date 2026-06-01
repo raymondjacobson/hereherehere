@@ -16,13 +16,11 @@ export default function PacksScreen() {
   const router = useRouter();
   const installed = useStore((s) => s.installedPacks);
   const installPack = useStore((s) => s.installPack);
-  const completeOnboarding = useStore((s) => s.completeOnboarding);
 
   const anyInstalled = installed.length > 0;
 
   function finish() {
-    completeOnboarding();
-    router.replace('/board');
+    router.push('/onboarding/permissions');
   }
 
   return (
