@@ -4,7 +4,7 @@ import { radius, spacing } from '@/theme/theme';
 import { useTheme } from '@/theme/useTheme';
 import { Text } from './Text';
 
-type Variant = 'primary' | 'secondary' | 'ghost';
+type Variant = 'primary' | 'secondary' | 'ghost' | 'glass';
 
 type Props = {
   title: string;
@@ -30,8 +30,16 @@ export function Button({
   const isDisabled = disabled || loading;
 
   const bg =
-    variant === 'primary' ? c.accent : variant === 'secondary' ? c.surfaceAlt : 'transparent';
+    variant === 'primary'
+      ? c.accent
+      : variant === 'secondary'
+        ? c.surfaceAlt
+        : variant === 'glass'
+          ? 'rgba(255,255,255,0.4)'
+          : 'transparent';
   const fg = variant === 'primary' ? c.textInverse : c.text;
+  const border = variant === 'glass' ? 1 : 0;
+  const borderColor = 'rgba(255,255,255,0.7)';
 
   return (
     <Pressable
@@ -48,7 +56,8 @@ export function Button({
           opacity: isDisabled ? 0.45 : pressed ? 0.85 : 1,
           minHeight: big ? 60 : 52,
           borderRadius: radius.pill,
-          borderWidth: variant === 'ghost' ? 0 : 0,
+          borderWidth: border,
+          borderColor,
         },
         style,
       ]}>

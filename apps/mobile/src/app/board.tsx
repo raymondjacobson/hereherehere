@@ -18,9 +18,6 @@ import { computeBoard, type BoardEntry } from '@/domain/board';
 import { mockTransport } from '@/transport/mock';
 import { motifs } from '@/assets/motifs';
 
-/** Height of the pinned glass top bar below the safe-area inset. */
-const BAR_BODY = 96;
-
 /** Friendly indicator of how many nearby phones could carry your messages. */
 function NearbyChip({ count, onPress }: { count: number; onPress: () => void }) {
   const { c } = useTheme();
@@ -88,10 +85,22 @@ export default function BoardScreen() {
 
   const friendsById = useMemo(() => new Map(friends.map((f) => [f.id, f])), [friends]);
 
-  const barHeight = insets.top + BAR_BODY;
-
   const header = (
     <View style={{ gap: spacing.lg, paddingBottom: spacing.lg }}>
+      {/* App bar — scrolls away with the content */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <View>
+          <Text variant="title" weight="extrabold">
+            hereherehere
+          </Text>
+          <NearbyChip count={nearby} onPress={() => router.push('/refresh')} />
+        </View>
+        <View style={{ flexDirection: 'row', gap: spacing.md }}>
+          <MotifButton motif={motifs.connect} accessibilityLabel="Friend code" onPress={() => router.push('/friends/code')} />
+          <MotifButton motif={motifs.settings} accessibilityLabel="Settings" onPress={() => router.push('/settings')} />
+        </View>
+      </View>
+
       {/* Own here */}
       {ownHere && identity ? (
         <Pressable onPress={() => router.push('/compose')}>
@@ -202,45 +211,14 @@ export default function BoardScreen() {
         )}
         ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
         contentContainerStyle={{
-          paddingTop: barHeight + spacing.md,
+          paddingTop: insets.top + spacing.md,
           paddingHorizontal: spacing.xl,
           paddingBottom: insets.bottom + 160,
         }}
         showsVerticalScrollIndicator={false}
       />
 
-      {/* Pinned frosted-glass top bar — the board scrolls underneath it. */}
-      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: barHeight }}>
-        <BlurView
-          intensity={Platform.OS === 'ios' ? 70 : 24}
-          tint="light"
-          experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
-          style={StyleSheet.absoluteFill}
-        />
-        <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: c.border }} />
-        <View
-          style={{
-            flex: 1,
-            paddingTop: insets.top,
-            paddingHorizontal: spacing.xl,
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}>
-          <View>
-            <Text variant="title" weight="extrabold">
-              hereherehere
-            </Text>
-            <NearbyChip count={nearby} onPress={() => router.push('/refresh')} />
-          </View>
-          <View style={{ flexDirection: 'row', gap: spacing.md }}>
-            <MotifButton motif={motifs.connect} accessibilityLabel="Friend code" onPress={() => router.push('/friends/code')} />
-            <MotifButton motif={motifs.settings} accessibilityLabel="Settings" onPress={() => router.push('/settings')} />
-          </View>
-        </View>
-      </View>
-
-      {/* Bottom actions */}
+      {/* Bottom actions — frosted glass tray; the board scrolls underneath it */}
       <View
         style={{
           position: 'absolute',
@@ -251,11 +229,16 @@ export default function BoardScreen() {
           paddingTop: spacing.lg,
           paddingBottom: insets.bottom + spacing.md,
           gap: spacing.sm,
-          backgroundColor: c.bg,
-          borderTopWidth: 1,
-          borderTopColor: c.border,
+          overflow: 'hidden',
         }}>
-        <Button title="Refresh Crowd" variant="secondary" onPress={() => router.push('/refresh')} />
+        <BlurView
+          intensity={Platform.OS === 'ios' ? 80 : 24}
+          tint="light"
+          experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
+          style={StyleSheet.absoluteFill}
+        />
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: c.border }} />
+        <Button title="Refresh Crowd" variant="glass" onPress={() => router.push('/refresh')} />
         <Button title="Post Message" big onPress={() => router.push('/compose')} />
       </View>
     </View>
