@@ -230,8 +230,8 @@ export default function BoardScreen() {
           borderTopWidth: 1,
           borderTopColor: c.border,
         }}>
-        <Button title="Refresh the crowd" variant="secondary" onPress={() => router.push('/refresh')} />
-        <Button title="Post a message" big onPress={() => router.push('/compose')} />
+        <Button title="Refresh Crowd" variant="secondary" onPress={() => router.push('/refresh')} />
+        <Button title="Post Message" big onPress={() => router.push('/compose')} />
       </View>
     </View>
   );
