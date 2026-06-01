@@ -18,6 +18,8 @@ export function Card({ children, onPress, style, muted }: Props) {
     padding: spacing.xl,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
+    // Clip children (e.g. full-bleed banner headers) to the rounded rectangle.
+    overflow: 'hidden',
   };
   if (onPress) {
     return (
