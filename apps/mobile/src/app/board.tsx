@@ -156,7 +156,7 @@ export default function BoardScreen() {
         <View style={{ alignItems: 'center', gap: spacing.sm, paddingTop: spacing.md }}>
           <ImageHero source={require('../../assets/states/empty-board.png')} size={Math.min(width * 0.72, 300)} />
           <Text variant="callout" color="textSecondary" center style={{ paddingHorizontal: spacing.lg }}>
-            No messages from friends yet. Pull a crowd refresh to find them.
+            Nothing here yet
           </Text>
         </View>
       ) : null}
