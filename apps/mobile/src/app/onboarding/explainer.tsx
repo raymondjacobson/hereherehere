@@ -1,21 +1,27 @@
 import { useRef, useState } from 'react';
-import { ScrollView, useWindowDimensions, View } from 'react-native';
+import { type ImageSourcePropType, ScrollView, useWindowDimensions, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/Text';
 import { Button } from '@/components/Button';
 import { Illustration } from '@/components/Illustration';
+import { ImageHero } from '@/components/ImageHero';
 import { spacing } from '@/theme/theme';
 import { useTheme } from '@/theme/useTheme';
 import { useStore } from '@/state/store';
 import { AVAILABLE_PACKS } from '@/data/packs/portola';
 
-type Page = { emoji: string; tint: 'pink' | 'blue' | 'yellow'; title: string; body: string };
+type Page = {
+  title: string;
+  body: string;
+  image?: ImageSourcePropType;
+  emoji?: string;
+  tint?: 'pink' | 'blue' | 'yellow';
+};
 
 const PAGES: Page[] = [
   {
-    emoji: '🍾',
-    tint: 'blue',
+    image: require('../../../assets/onboarding/friends-crowd.png'),
     title: 'When service disappears',
     body: 'hereherehere lets you share where you’ll be when cell and wifi are down. It uses nearby phones to carry your here through the crowd — like a message in a bottle.',
   },
@@ -37,11 +43,12 @@ export default function ExplainerScreen() {
   const router = useRouter();
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const scrollRef = useRef<ScrollView>(null);
   const [page, setPage] = useState(0);
 
   const isLast = page === PAGES.length - 1;
+  const heroSize = Math.min(width, Math.round(height * 0.46));
 
   function next() {
     if (!isLast) {
@@ -68,9 +75,13 @@ export default function ExplainerScreen() {
         {PAGES.map((p) => (
           <View
             key={p.title}
-            style={{ width, paddingHorizontal: spacing.xl, alignItems: 'center', justifyContent: 'center', gap: spacing.xxl }}>
-            <Illustration emoji={p.emoji} tint={p.tint} />
-            <View style={{ gap: spacing.md }}>
+            style={{ width, alignItems: 'center', justifyContent: 'center', gap: spacing.xl }}>
+            {p.image ? (
+              <ImageHero source={p.image} size={heroSize} />
+            ) : (
+              <Illustration emoji={p.emoji ?? '✨'} tint={p.tint ?? 'blue'} />
+            )}
+            <View style={{ gap: spacing.md, paddingHorizontal: spacing.xl }}>
               <Text variant="title" weight="extrabold" center>
                 {p.title}
               </Text>
