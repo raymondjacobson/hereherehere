@@ -3,7 +3,7 @@ import { useStore } from '@/state/store';
 import { mockTransport, SESSION_MS } from '@/transport/mock';
 import type { SessionPhase } from '@/transport/types';
 
-/** How long the "✨ N new" result lingers before the pill returns to idle. */
+/** How long the "N new" result lingers before the pill returns to idle. */
 const RESULT_LINGER_MS = 4000;
 
 export type CrowdRefreshState = {

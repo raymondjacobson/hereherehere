@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, View } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Screen } from '@/components/Screen';
 import { Text } from '@/components/Text';
@@ -10,6 +11,7 @@ import { useTheme } from '@/theme/useTheme';
 import { useStore } from '@/state/store';
 import { mockTransport, SESSION_MS } from '@/transport/mock';
 import type { SessionPhase } from '@/transport/types';
+import { motifs } from '@/assets/motifs';
 
 /**
  * Full-screen crowd-refresh ceremony. Reserved for the notification entry path
@@ -119,7 +121,7 @@ export default function RefreshScreen() {
           </>
         ) : (
           <View style={{ alignItems: 'center', gap: spacing.lg, alignSelf: 'stretch' }}>
-            <Text style={{ fontSize: 56 }}>{updates.length ? '✨' : '🌙'}</Text>
+            <Image source={updates.length ? motifs.new : motifs.oldMessage} style={{ width: 96, height: 96 }} contentFit="contain" />
             <Text variant="title" weight="extrabold" center>
               {updates.length ? `${updates.length} new message${updates.length === 1 ? '' : 's'}` : 'No new messages this time.'}
             </Text>
