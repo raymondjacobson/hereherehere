@@ -144,7 +144,7 @@ export default function BoardScreen() {
 
       {board.primary.length > 0 ? (
         <Text variant="meta" weight="bold" color="textSecondary" style={{ marginTop: spacing.sm }}>
-          FRIENDS · BY LATEST MESSAGE
+          FRIENDS
         </Text>
       ) : null}
     </View>
@@ -173,14 +173,25 @@ export default function BoardScreen() {
             </Text>
           </Pressable>
           {showQuiet
-            ? board.quiet.map((f) => (
-                <View key={f.id} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.lg, paddingHorizontal: spacing.sm }}>
-                  <Avatar name={f.displayName} colorIndex={f.colorIndex} size={40} muted />
-                  <Text variant="body" weight="medium" color="textSecondary">
-                    {f.displayName}
-                  </Text>
-                </View>
-              ))
+            ? board.quiet.map((entry) =>
+                entry.here ? (
+                  <HereCard
+                    key={entry.friend.id}
+                    name={entry.friend.displayName}
+                    colorIndex={entry.friend.colorIndex}
+                    here={entry.here}
+                    state="expired"
+                    now={now}
+                  />
+                ) : (
+                  <View key={entry.friend.id} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.lg, paddingHorizontal: spacing.sm }}>
+                    <Avatar name={entry.friend.displayName} colorIndex={entry.friend.colorIndex} size={40} muted />
+                    <Text variant="body" weight="medium" color="textSecondary">
+                      {entry.friend.displayName}
+                    </Text>
+                  </View>
+                ),
+              )
             : null}
         </View>
       ) : null}
