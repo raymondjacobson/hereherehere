@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { FlatList, Pressable, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { FlatList, Pressable, useWindowDimensions, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/Text';
@@ -7,11 +7,13 @@ import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { Avatar } from '@/components/Avatar';
 import { HereCard } from '@/components/HereCard';
+import { ImageHero } from '@/components/ImageHero';
 import { radius, spacing } from '@/theme/theme';
 import { useTheme } from '@/theme/useTheme';
 import { useNow } from '@/hooks/useNow';
 import { useStore } from '@/state/store';
 import { computeBoard, type BoardEntry } from '@/domain/board';
+import { mockTransport } from '@/transport/mock';
 
 function IconButton({ label, onPress }: { label: string; onPress: () => void }) {
   const { c } = useTheme();
@@ -34,16 +36,57 @@ function IconButton({ label, onPress }: { label: string; onPress: () => void }) 
   );
 }
 
+/** Friendly indicator of how many nearby phones could carry your messages. */
+function NearbyChip({ count, onPress }: { count: number; onPress: () => void }) {
+  const { c } = useTheme();
+  const active = count > 0;
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        alignSelf: 'flex-start',
+        marginTop: spacing.sm,
+        paddingVertical: 6,
+        paddingHorizontal: spacing.md,
+        borderRadius: radius.pill,
+        backgroundColor: c.surfaceAlt,
+        borderWidth: 1,
+        borderColor: c.border,
+        opacity: pressed ? 0.8 : 1,
+      })}>
+      <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: active ? c.success : c.textTertiary }} />
+      <Text variant="meta" weight="semibold" color={active ? 'text' : 'textSecondary'}>
+        {active ? `${count} nearby` : 'Looking nearby…'}
+      </Text>
+    </Pressable>
+  );
+}
+
 export default function BoardScreen() {
   const router = useRouter();
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
   const now = useNow();
 
+  const { width } = useWindowDimensions();
   const identity = useStore((s) => s.identity);
   const friends = useStore((s) => s.friends);
   const heres = useStore((s) => s.heres);
   const [showQuiet, setShowQuiet] = useState(false);
+  const [nearby, setNearby] = useState(() => mockTransport.getNearby());
+
+  // Ambient nearby-peer count while the board is on screen.
+  useEffect(() => {
+    mockTransport.startAmbient();
+    const unsub = mockTransport.onNearby(setNearby);
+    return () => {
+      unsub();
+      mockTransport.stopAmbient();
+    };
+  }, []);
 
   const ownHere = identity ? heres[identity.signPk] : undefined;
 
@@ -71,6 +114,7 @@ export default function BoardScreen() {
           <Text variant="title" weight="extrabold">
             the crowd
           </Text>
+          <NearbyChip count={nearby} onPress={() => router.push('/refresh')} />
         </View>
         <View style={{ flexDirection: 'row', gap: spacing.sm }}>
           <IconButton label="👥" onPress={() => router.push('/friends/code')} />
@@ -118,15 +162,20 @@ export default function BoardScreen() {
       ) : null}
 
       {friends.length === 0 ? (
-        <Card>
-          <Text variant="heading" weight="bold">
+        <View style={{ alignItems: 'center', gap: spacing.sm, paddingTop: spacing.md }}>
+          <ImageHero source={require('../../assets/states/empty-board.png')} size={Math.min(width * 0.78, 320)} />
+          <Text variant="heading" weight="bold" center>
             Add your friends
           </Text>
-          <Text variant="callout" color="textSecondary" style={{ marginTop: spacing.xs, marginBottom: spacing.lg }}>
+          <Text
+            variant="callout"
+            color="textSecondary"
+            center
+            style={{ paddingHorizontal: spacing.lg, marginBottom: spacing.md }}>
             Scan each other’s friend codes to see each other’s messages.
           </Text>
-          <Button title="Open friend code" onPress={() => router.push('/friends/code')} />
-        </Card>
+          <Button title="Open friend code" onPress={() => router.push('/friends/code')} style={{ alignSelf: 'stretch' }} />
+        </View>
       ) : null}
 
       {board.quiet.length > 0 ? (

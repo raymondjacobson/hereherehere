@@ -37,4 +37,15 @@ export interface Transport {
 
   /** Abort an in-flight session. */
   stopSession(): void;
+
+  /** Current count of nearby reachable peers. */
+  getNearby(): number;
+
+  /** Subscribe to changes in the nearby-peer count. Fires immediately with the
+   *  current value. Returns an unsubscribe fn. */
+  onNearby(handler: (count: number) => void): () => void;
+
+  /** Start/stop ambient peer discovery while the app is foregrounded. */
+  startAmbient(): void;
+  stopAmbient(): void;
 }

@@ -23,6 +23,10 @@ export class MockTransport implements Transport {
   private aborted = false;
   private seq = Math.floor(Date.now() / 1000);
 
+  private nearby = 0;
+  private nearbyHandlers = new Set<(n: number) => void>();
+  private ambientTimer: ReturnType<typeof setInterval> | null = null;
+
   configure(local: { signPk: string; boxPk: string }) {
     this.local = local;
   }
@@ -42,6 +46,47 @@ export class MockTransport implements Transport {
 
   stopSession() {
     this.aborted = true;
+  }
+
+  // --- Ambient nearby-peer reporting --------------------------------------
+
+  getNearby() {
+    return this.nearby;
+  }
+
+  onNearby(handler: (n: number) => void) {
+    this.nearbyHandlers.add(handler);
+    handler(this.nearby);
+    return () => this.nearbyHandlers.delete(handler);
+  }
+
+  private setNearby(n: number) {
+    if (n === this.nearby) return;
+    this.nearby = n;
+    this.nearbyHandlers.forEach((h) => h(n));
+  }
+
+  private rollNearby() {
+    // Simulate phones drifting in and out of range. Only the synthetic demo
+    // peers count as nearby in this build, so the indicator stays honest: it
+    // reads 0 until demo friends are added.
+    const base = this.peers.length;
+    if (base === 0) return this.setNearby(0);
+    const lo = Math.floor(base * 0.4);
+    this.setNearby(lo + Math.floor(Math.random() * (base - lo + 1)));
+  }
+
+  startAmbient() {
+    if (this.ambientTimer) return;
+    this.rollNearby();
+    this.ambientTimer = setInterval(() => this.rollNearby(), 3500);
+  }
+
+  stopAmbient() {
+    if (this.ambientTimer) {
+      clearInterval(this.ambientTimer);
+      this.ambientTimer = null;
+    }
   }
 
   private emit(packets: RelayPacket[]) {
