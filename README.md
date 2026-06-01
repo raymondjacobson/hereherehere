@@ -1,61 +1,44 @@
 # hereherehere
 
-> A friend-only Bluetooth-mesh status board for finding your people at a festival when cell and wifi are down.
+> Find your friends at a festival when cell and wifi are down. Post where you'll be and until when — your phone carries it through the crowd, like a message in a bottle. Only friends you've added can read your heres.
 
-Post where you'll be and until when. Your phone carries it through the crowd. Only friends you've added can read your heres — other phones can help carry them, but can't read them.
+This is **not** chat, not a map, not live tracking. The core object is a **here**: a short, timestamped, encrypted status. Full spec in [`hereherehere_prd.md`](./hereherehere_prd.md).
 
-This is **not** chat, not a map, not live tracking. The core object is a **here**: a short, timestamped, encrypted status. See [`hereherehere_prd.md`](./hereherehere_prd.md) for the full product spec.
+## Monorepo layout
 
-## Status
+```
+apps/
+  mobile/   Expo (SDK 56) + React Native app — the product
+  web/      Static site for hereherehere.app — landing + /friend redirect
+```
 
-MVP product layer, built behind a swappable transport boundary.
+npm workspaces; one lockfile at the root.
 
-- ✅ Onboarding (display name → explainer carousel → event packs)
-- ✅ Local cryptographic identity (Ed25519 signing + X25519 encryption), keys in the device keychain
-- ✅ People board (latest here per friend, expiry/quiet rules)
-- ✅ Compose flow (where → until → note → post) with event-pack autocomplete
-- ✅ Friend codes (QR show / scan / add, one-way semantics, friend link)
-- ✅ Crowd refresh (session UI, progress, results)
-- ✅ Portola event pack (stages, sets, crowd-refresh times)
-- ✅ **Real end-to-end crypto** over a **simulated mesh** (`MockTransport`)
-- ⬜ Real BLE transport (native module + dev client) — drops in behind the `Transport` interface
-- ⬜ Scheduled crowd-refresh local notifications
-- ⬜ Friend-link deep linking / universal links
+## Getting started
 
-## Running it
-
-This build runs in **Expo Go** (no native dev client needed yet — crypto is pure JS, storage/camera use Expo modules).
+Node 24 (via nvm). From the repo root:
 
 ```sh
-nvm use            # Node 24
-npm install
-npx expo start     # scan the QR with Expo Go on your iPhone
+npm install            # installs both workspaces
+
+npm run mobile         # start the Expo dev server (scan with Expo Go)
+npm run web            # start the static site dev server (Vite)
+npm run web:build      # build the static site to apps/web/dist
 ```
 
-To feel the whole loop: **Settings → Add demo friends → Refresh the crowd**. The demo "friends" are throwaway identities whose heres are genuinely signed and sealed to your public key, so the real crypto + relay + board path all run.
+### apps/mobile
 
-## Architecture
+The React Native app. Runs in **Expo Go** today — crypto is pure JS, the mesh is simulated behind a swappable `Transport` interface, and real BLE drops in later with no product changes. See [apps/mobile/README.md](./apps/mobile/README.md) for architecture and the security model.
 
-```
-src/
-  app/          Expo Router screens (onboarding, board, compose, refresh, friends, settings)
-  components/   UI primitives (Text, Button, Card, Chip, Avatar, HereCard, …)
-  theme/        Warm pastel light/dark palettes, spacing, type scale
-  crypto/       PRNG wiring, base64/utf8 codec, identity keys, seal/sign
-  domain/       Pure logic: types, packets, board selectors, friend codes, autocomplete
-  transport/    Transport interface + simulated mesh (MockTransport) + synthetic peers
-  state/        Zustand store (persisted) + SecureStore secrets
-  data/packs/   Event packs (Portola)
-```
+### apps/web
 
-### The transport boundary
+A zero-framework-ish static site (Vite, multipage). Two pages:
 
-The product never knows whether packets travel over a simulated mesh or real Bluetooth. Everything above `src/transport/types.ts` (`Transport` interface) is transport-agnostic. Real BLE will implement the same interface in a custom dev client with no changes to product code.
+- **`/`** — landing page.
+- **`/friend`** — friend-link target. Decodes the friend payload from the URL **fragment** (so it never reaches the host), shows who's adding you, then deep-links into the app or points to install instructions.
 
-### Security model
+Deploy `apps/web/dist` to any static host (the plan is `hereherehere.app`).
 
-- Each device generates an Ed25519 signing keypair (its public key **is** the friend id) and an X25519 box keypair. Secret keys live only in `expo-secure-store` (keychain), never in app storage or any server.
-- A here is JSON, sealed per-friend with `nacl.box` (only that friend can open it) and the packet is signed with Ed25519 (recipients verify the sender; replay is bounded by per-sender sequence numbers + expiry).
-- Relays can dedupe and forward by `packetId`/`ttl` but cannot read contents or display unknown senders.
+## Privacy posture
 
-There is no account, no phone number, no backend, and no GPS.
+No account, no phone number, no backend, no GPS. Private keys live only on-device. Friends you add can read your heres; other phones can only carry them.
