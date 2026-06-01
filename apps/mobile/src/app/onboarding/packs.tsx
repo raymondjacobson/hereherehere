@@ -45,13 +45,18 @@ export default function PacksScreen() {
               {banner ? (
                 <View
                   style={{
-                    aspectRatio: 3,
-                    borderRadius: radius.md,
-                    overflow: 'hidden',
-                    backgroundColor: PACK_BANNER_BG[pack.id] ?? '#000',
+                    // Bleed past the card's padding so the banner fills the
+                    // full width and flush top of the card.
+                    marginTop: -spacing.xl,
+                    marginHorizontal: -spacing.xl,
                     marginBottom: spacing.lg,
+                    aspectRatio: 3,
+                    backgroundColor: PACK_BANNER_BG[pack.id] ?? '#000',
+                    borderTopLeftRadius: radius.lg,
+                    borderTopRightRadius: radius.lg,
+                    overflow: 'hidden',
                   }}>
-                  <Image source={banner} style={{ width: '100%', height: '100%' }} contentFit="contain" />
+                  <Image source={banner} style={{ width: '100%', height: '100%' }} contentFit="cover" />
                 </View>
               ) : null}
 
