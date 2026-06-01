@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,6 +15,7 @@ import { useTheme } from '@/theme/useTheme';
 import { useStore } from '@/state/store';
 import { buildSuggestions, filterSuggestions } from '@/domain/autocomplete';
 import { clockTime, DAY, HOUR, MIN } from '@/util/time';
+import { motifs } from '@/assets/motifs';
 
 const STEP = 10 * MIN;
 type PickerTarget = 'start' | 'end' | null;
@@ -92,7 +94,7 @@ export default function ComposeScreen() {
     return (
       <View style={{ flex: 1, backgroundColor: c.bg, paddingTop: insets.top, paddingBottom: insets.bottom + spacing.md, paddingHorizontal: spacing.xl }}>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.lg }}>
-          <Text style={{ fontSize: 64 }}>🍾</Text>
+          <Image source={motifs.message} style={{ width: 120, height: 120 }} contentFit="contain" />
           <Text variant="title" weight="extrabold" center>
             Your message is ready to move through the crowd.
           </Text>
@@ -101,7 +103,7 @@ export default function ComposeScreen() {
           </Text>
         </View>
         <View style={{ gap: spacing.sm }}>
-          <Button title="Refresh the crowd now" big onPress={() => router.replace('/refresh')} />
+          <Button title="Refresh the crowd now" big onPress={() => router.replace({ pathname: '/board', params: { refresh: '1' } })} />
           <Button title="Done" variant="ghost" onPress={() => router.back()} />
         </View>
       </View>
