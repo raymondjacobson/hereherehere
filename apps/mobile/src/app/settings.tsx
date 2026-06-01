@@ -66,8 +66,12 @@ export default function SettingsScreen() {
         <Section title="Your name">
           <TextField
             value={name}
-            onChangeText={setName}
-            onEndEditing={() => name.trim() && setDisplayName(name)}
+            onChangeText={(t) => {
+              setName(t);
+              // Commit live so the edit isn't lost if the field never blurs
+              // (e.g. tapping "Done" closes the screen without blurring).
+              if (t.trim()) setDisplayName(t);
+            }}
             placeholder="your name"
             autoCapitalize="words"
             maxLength={24}
