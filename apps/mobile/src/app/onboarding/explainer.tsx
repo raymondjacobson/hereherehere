@@ -23,17 +23,17 @@ const PAGES: Page[] = [
   {
     image: require('../../../assets/onboarding/friends-crowd.png'),
     title: 'When service disappears',
-    body: 'hereherehere lets you share where you’ll be when cell and wifi are down. It uses nearby phones to carry your here through the crowd — like a message in a bottle.',
+    body: 'hereherehere lets you share where you’ll be when cell service and wifi are down. It uses nearby phones to carry your messages through a crowd, like a message in a bottle.',
   },
   {
     image: require('../../../assets/onboarding/carry-private.png'),
-    title: 'Only your friends can read it',
-    body: 'Your heres are encrypted so only friends you’ve added can see them. Other phones may help carry them, but they can’t read them.',
+    title: 'Privacy first',
+    body: 'Your messages are encrypted so only friends you’ve added can see them. Other phones may help carry them, but they can’t read them.',
   },
   {
     image: require('../../../assets/onboarding/refresh-crowd.png'),
-    title: 'Open to refresh the crowd',
-    body: 'Phones can only pass heres while the app is open. During the event, we’ll remind everyone around the same time to open hereherehere for a quick crowd refresh.',
+    title: 'Open to broadcast',
+    body: 'Phones can only pass messages while the app is open. During your event, we’ll remind everyone around the same time to open hereherehere for a quick crowd refresh.',
   },
 ];
 
