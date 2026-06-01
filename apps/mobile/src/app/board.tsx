@@ -8,33 +8,14 @@ import { Card } from '@/components/Card';
 import { Avatar } from '@/components/Avatar';
 import { HereCard } from '@/components/HereCard';
 import { ImageHero } from '@/components/ImageHero';
+import { MotifButton } from '@/components/MotifButton';
 import { radius, spacing } from '@/theme/theme';
 import { useTheme } from '@/theme/useTheme';
 import { useNow } from '@/hooks/useNow';
 import { useStore } from '@/state/store';
 import { computeBoard, type BoardEntry } from '@/domain/board';
 import { mockTransport } from '@/transport/mock';
-
-function IconButton({ label, onPress }: { label: string; onPress: () => void }) {
-  const { c } = useTheme();
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        backgroundColor: c.surfaceAlt,
-        borderWidth: 1,
-        borderColor: c.border,
-        alignItems: 'center',
-        justifyContent: 'center',
-        opacity: pressed ? 0.8 : 1,
-      })}>
-      <Text style={{ fontSize: 20 }}>{label}</Text>
-    </Pressable>
-  );
-}
+import { motifs } from '@/assets/motifs';
 
 /** Friendly indicator of how many nearby phones could carry your messages. */
 function NearbyChip({ count, onPress }: { count: number; onPress: () => void }) {
@@ -113,9 +94,9 @@ export default function BoardScreen() {
           </Text>
           <NearbyChip count={nearby} onPress={() => router.push('/refresh')} />
         </View>
-        <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-          <IconButton label="👥" onPress={() => router.push('/friends/code')} />
-          <IconButton label="⚙️" onPress={() => router.push('/settings')} />
+        <View style={{ flexDirection: 'row', gap: spacing.md }}>
+          <MotifButton motif={motifs.qr} accessibilityLabel="Friend code" onPress={() => router.push('/friends/code')} />
+          <MotifButton motif={motifs.settings} accessibilityLabel="Settings" onPress={() => router.push('/settings')} />
         </View>
       </View>
 
