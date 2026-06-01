@@ -8,10 +8,14 @@ import { Card } from '@/components/Card';
 import { spacing } from '@/theme/theme';
 import { useTheme } from '@/theme/useTheme';
 import { useStore } from '@/state/store';
-import { mockTransport } from '@/transport/mock';
+import { mockTransport, SESSION_MS } from '@/transport/mock';
 import type { SessionPhase } from '@/transport/types';
 
-const SESSION_MS = 25_000;
+/**
+ * Full-screen crowd-refresh ceremony. Reserved for the notification entry path
+ * ("time to scan") where the takeover is the point. Manual refreshes from the
+ * board run ambient in place instead — see useCrowdRefresh.
+ */
 
 const PHASE_TEXT: Record<SessionPhase, string> = {
   scanning: 'Looking for nearby phones…',

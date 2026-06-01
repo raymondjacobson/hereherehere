@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
-import { FlatList, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Easing, FlatList, type ImageSourcePropType, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { useRouter } from 'expo-router';
+import { Image } from 'expo-image';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/Text';
 import { Button } from '@/components/Button';
@@ -13,18 +14,68 @@ import { MotifButton } from '@/components/MotifButton';
 import { radius, spacing } from '@/theme/theme';
 import { useTheme } from '@/theme/useTheme';
 import { useNow } from '@/hooks/useNow';
+import { useCrowdRefresh, type CrowdRefreshState } from '@/hooks/useCrowdRefresh';
 import { useStore } from '@/state/store';
 import { computeBoard, type BoardEntry } from '@/domain/board';
 import { mockTransport } from '@/transport/mock';
+import type { SessionPhase } from '@/transport/types';
 import { motifs } from '@/assets/motifs';
 
-/** Friendly indicator of how many nearby phones could carry your messages. */
-function NearbyChip({ count, onPress }: { count: number; onPress: () => void }) {
+const PHASE_LABEL: Record<SessionPhase, string> = {
+  scanning: 'Scanning',
+  trading: 'Trading',
+  checking: 'Checking friends',
+  updating: 'Updating',
+  done: 'Done',
+};
+
+/**
+ * Top-left status pill. Doubles as the ambient-refresh affordance: idle it
+ * reports nearby phones and starts a session on tap; mid-session it shows the
+ * live phase + countdown in place; just after, the result — all without leaving
+ * the board.
+ */
+function StatusPill({ nearby, refresh }: { nearby: number; refresh: CrowdRefreshState }) {
   const { c } = useTheme();
-  const active = count > 0;
+  const { active, phase, remaining, newCount, showResult, start } = refresh;
+
+  // Breathe the dot while a session is running.
+  const pulse = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!active) {
+      pulse.setValue(0);
+      return;
+    }
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [active, pulse]);
+
+  let dotColor = nearby > 0 ? c.success : c.textTertiary;
+  let label = nearby > 0 ? `${nearby} nearby` : 'Looking nearby…';
+  let labelColor: 'text' | 'textSecondary' | 'accent' = nearby > 0 ? 'text' : 'textSecondary';
+  // In the result state the leading dot becomes a claymation motif.
+  let motif: ImageSourcePropType | null = null;
+
+  if (active) {
+    dotColor = c.accent;
+    label = `${PHASE_LABEL[phase]} · ${remaining}s`;
+    labelColor = 'accent';
+  } else if (showResult) {
+    motif = newCount > 0 ? motifs.new : motifs.oldMessage;
+    label = newCount > 0 ? `${newCount} new` : 'nothing new';
+    labelColor = newCount > 0 ? 'text' : 'textSecondary';
+  }
+
   return (
     <Pressable
-      onPress={onPress}
+      onPress={start}
+      disabled={active}
       style={({ pressed }) => ({
         flexDirection: 'row',
         alignItems: 'center',
@@ -34,14 +85,27 @@ function NearbyChip({ count, onPress }: { count: number; onPress: () => void }) 
         paddingVertical: 6,
         paddingHorizontal: spacing.md,
         borderRadius: radius.pill,
-        backgroundColor: c.surfaceAlt,
+        backgroundColor: active ? c.accentSoft : c.surfaceAlt,
         borderWidth: 1,
-        borderColor: c.border,
-        opacity: pressed ? 0.8 : 1,
+        borderColor: active ? c.accent : c.border,
+        opacity: pressed && !active ? 0.8 : 1,
       })}>
-      <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: active ? c.success : c.textTertiary }} />
-      <Text variant="meta" weight="semibold" color={active ? 'text' : 'textSecondary'}>
-        {active ? `${count} nearby` : 'Looking nearby…'}
+      {motif ? (
+        <Image source={motif} style={{ width: 18, height: 18, marginVertical: -3 }} contentFit="contain" />
+      ) : (
+        <Animated.View
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: 4,
+            backgroundColor: dotColor,
+            opacity: active ? pulse.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1] }) : 1,
+            transform: [{ scale: active ? pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.4] }) : 1 }],
+          }}
+        />
+      )}
+      <Text variant="meta" weight="semibold" color={labelColor}>
+        {label}
       </Text>
     </Pressable>
   );
@@ -59,6 +123,7 @@ export default function BoardScreen() {
   const heres = useStore((s) => s.heres);
   const [showQuiet, setShowQuiet] = useState(false);
   const [nearby, setNearby] = useState(() => mockTransport.getNearby());
+  const refresh = useCrowdRefresh();
 
   // Ambient nearby-peer count while the board is on screen.
   useEffect(() => {
@@ -69,6 +134,17 @@ export default function BoardScreen() {
       mockTransport.stopAmbient();
     };
   }, []);
+
+  // Arriving from "Refresh the crowd now" (e.g. just after posting) kicks off an
+  // ambient session in place rather than a full-screen takeover.
+  const { refresh: refreshParam } = useLocalSearchParams<{ refresh?: string }>();
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (refreshParam === '1' && !autoStarted.current) {
+      autoStarted.current = true;
+      refresh.start();
+    }
+  }, [refreshParam, refresh]);
 
   const ownHere = identity ? heres[identity.signPk] : undefined;
 
@@ -93,7 +169,7 @@ export default function BoardScreen() {
           <Text variant="title" weight="extrabold">
             hereherehere
           </Text>
-          <NearbyChip count={nearby} onPress={() => router.push('/refresh')} />
+          <StatusPill nearby={nearby} refresh={refresh} />
         </View>
         <View style={{ flexDirection: 'row', gap: spacing.md }}>
           <MotifButton motif={motifs.connect} accessibilityLabel="Friend code" onPress={() => router.push('/friends/code')} />
@@ -238,7 +314,12 @@ export default function BoardScreen() {
           style={StyleSheet.absoluteFill}
         />
         <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: c.border }} />
-        <Button title="Refresh Crowd" variant="glass" onPress={() => router.push('/refresh')} />
+        <Button
+          title={refresh.active ? `Refreshing… ${refresh.remaining}s` : 'Refresh Crowd'}
+          variant="glass"
+          disabled={refresh.active}
+          onPress={refresh.start}
+        />
         <Button title="Post Message" big onPress={() => router.push('/compose')} />
       </View>
     </View>

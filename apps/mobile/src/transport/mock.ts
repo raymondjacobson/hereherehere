@@ -6,6 +6,10 @@ import type { SyntheticPeer } from './syntheticPeers';
 
 const DURATIONS = [30, 60, 90, 120];
 
+/** Length of one crowd-refresh session. Shared by the ambient board indicator
+ *  and the full-screen notification ceremony so they stay in lockstep. */
+export const SESSION_MS = 25_000;
+
 function sleep(ms: number) {
   return new Promise<void>((r) => setTimeout(r, ms));
 }

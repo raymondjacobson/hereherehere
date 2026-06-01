@@ -101,7 +101,7 @@ export default function ComposeScreen() {
           </Text>
         </View>
         <View style={{ gap: spacing.sm }}>
-          <Button title="Refresh the crowd now" big onPress={() => router.replace('/refresh')} />
+          <Button title="Refresh the crowd now" big onPress={() => router.replace({ pathname: '/board', params: { refresh: '1' } })} />
           <Button title="Done" variant="ghost" onPress={() => router.back()} />
         </View>
       </View>
