@@ -1,0 +1,146 @@
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Easing, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Screen } from '@/components/Screen';
+import { Text } from '@/components/Text';
+import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
+import { spacing } from '@/theme/theme';
+import { useTheme } from '@/theme/useTheme';
+import { useStore } from '@/state/store';
+import { mockTransport } from '@/transport/mock';
+import type { SessionPhase } from '@/transport/types';
+
+const SESSION_MS = 25_000;
+
+const PHASE_TEXT: Record<SessionPhase, string> = {
+  scanning: 'Looking for nearby phones…',
+  trading: 'Trading heres…',
+  checking: 'Checking for your friends…',
+  updating: 'Updating your board…',
+  done: 'Done',
+};
+
+type Update = { authorId: string; name: string; where: string };
+
+export default function RefreshScreen() {
+  const router = useRouter();
+  const { c } = useTheme();
+  const ingestPackets = useStore((s) => s.ingestPackets);
+  const friends = useStore((s) => s.friends);
+
+  const [phase, setPhase] = useState<SessionPhase>('scanning');
+  const [fraction, setFraction] = useState(0);
+  const [done, setDone] = useState(false);
+  const updatesRef = useRef<Map<string, Update>>(new Map());
+  const [updates, setUpdates] = useState<Update[]>([]);
+
+  const pulse = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 900, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0, duration: 900, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+
+    const friendsById = new Map(friends.map((f) => [f.id, f]));
+    const unsub = mockTransport.onInbound((packets) => {
+      const opened = ingestPackets(packets);
+      for (const here of opened) {
+        const friend = friendsById.get(here.authorId);
+        if (friend) updatesRef.current.set(here.authorId, { authorId: here.authorId, name: friend.displayName, where: here.whereText });
+      }
+    });
+
+    let cancelled = false;
+    mockTransport
+      .runSession(SESSION_MS, (p) => {
+        if (cancelled) return;
+        setPhase(p.phase);
+        setFraction(p.fraction);
+      })
+      .then(() => {
+        if (cancelled) return;
+        setUpdates([...updatesRef.current.values()]);
+        setDone(true);
+      });
+
+    return () => {
+      cancelled = true;
+      loop.stop();
+      unsub();
+      mockTransport.stopSession();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const remaining = Math.max(0, Math.ceil((1 - fraction) * (SESSION_MS / 1000)));
+  const scale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.12] });
+  const opacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1] });
+
+  return (
+    <Screen>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.xxl }}>
+        {!done ? (
+          <>
+            <Animated.View
+              style={{
+                width: 200,
+                height: 200,
+                borderRadius: 100,
+                backgroundColor: c.accentSoft,
+                alignItems: 'center',
+                justifyContent: 'center',
+                transform: [{ scale }],
+                opacity,
+              }}>
+              <Text variant="hero" weight="extrabold" color="accent" style={{ fontSize: 56, lineHeight: 64 }}>
+                {remaining}
+              </Text>
+            </Animated.View>
+            <View style={{ gap: spacing.sm }}>
+              <Text variant="title" weight="extrabold" center>
+                Refreshing the crowd
+              </Text>
+              <Text variant="body" color="textSecondary" center>
+                Keep this open. Your phone is trading heres nearby.
+              </Text>
+              <Text variant="callout" weight="semibold" color="accent" center style={{ marginTop: spacing.sm }}>
+                {PHASE_TEXT[phase]}
+              </Text>
+            </View>
+          </>
+        ) : (
+          <View style={{ alignItems: 'center', gap: spacing.lg, alignSelf: 'stretch' }}>
+            <Text style={{ fontSize: 56 }}>{updates.length ? '✨' : '🌙'}</Text>
+            <Text variant="title" weight="extrabold" center>
+              {updates.length ? `${updates.length} new here${updates.length === 1 ? '' : 's'}` : 'No new heres this time.'}
+            </Text>
+            <View style={{ alignSelf: 'stretch', gap: spacing.sm }}>
+              {updates.map((u) => (
+                <Card key={u.authorId} muted>
+                  <Text variant="body" weight="bold">
+                    {u.name} updated
+                  </Text>
+                  <Text variant="callout" color="textSecondary">
+                    {u.where}
+                  </Text>
+                </Card>
+              ))}
+            </View>
+          </View>
+        )}
+      </View>
+
+      <Button
+        title={done ? 'See the board' : 'Stop'}
+        big={done}
+        variant={done ? 'primary' : 'ghost'}
+        onPress={() => router.back()}
+      />
+    </Screen>
+  );
+}

@@ -1,56 +1,61 @@
-# Welcome to your Expo app 👋
+# hereherehere
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+> A friend-only Bluetooth-mesh status board for finding your people at a festival when cell and wifi are down.
 
-## Get started
+Post where you'll be and until when. Your phone carries it through the crowd. Only friends you've added can read your heres — other phones can help carry them, but can't read them.
 
-1. Install dependencies
+This is **not** chat, not a map, not live tracking. The core object is a **here**: a short, timestamped, encrypted status. See [`hereherehere_prd.md`](./hereherehere_prd.md) for the full product spec.
 
-   ```bash
-   npm install
-   ```
+## Status
 
-2. Start the app
+MVP product layer, built behind a swappable transport boundary.
 
-   ```bash
-   npx expo start
-   ```
+- ✅ Onboarding (display name → explainer carousel → event packs)
+- ✅ Local cryptographic identity (Ed25519 signing + X25519 encryption), keys in the device keychain
+- ✅ People board (latest here per friend, expiry/quiet rules)
+- ✅ Compose flow (where → until → note → post) with event-pack autocomplete
+- ✅ Friend codes (QR show / scan / add, one-way semantics, friend link)
+- ✅ Crowd refresh (session UI, progress, results)
+- ✅ Portola event pack (stages, sets, crowd-refresh times)
+- ✅ **Real end-to-end crypto** over a **simulated mesh** (`MockTransport`)
+- ⬜ Real BLE transport (native module + dev client) — drops in behind the `Transport` interface
+- ⬜ Scheduled crowd-refresh local notifications
+- ⬜ Friend-link deep linking / universal links
 
-In the output, you'll find options to open the app in a
+## Running it
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+This build runs in **Expo Go** (no native dev client needed yet — crypto is pure JS, storage/camera use Expo modules).
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```sh
+nvm use            # Node 24
+npm install
+npx expo start     # scan the QR with Expo Go on your iPhone
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+To feel the whole loop: **Settings → Add demo friends → Refresh the crowd**. The demo "friends" are throwaway identities whose heres are genuinely signed and sealed to your public key, so the real crypto + relay + board path all run.
 
-### Other setup steps
+## Architecture
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+```
+src/
+  app/          Expo Router screens (onboarding, board, compose, refresh, friends, settings)
+  components/   UI primitives (Text, Button, Card, Chip, Avatar, HereCard, …)
+  theme/        Warm pastel light/dark palettes, spacing, type scale
+  crypto/       PRNG wiring, base64/utf8 codec, identity keys, seal/sign
+  domain/       Pure logic: types, packets, board selectors, friend codes, autocomplete
+  transport/    Transport interface + simulated mesh (MockTransport) + synthetic peers
+  state/        Zustand store (persisted) + SecureStore secrets
+  data/packs/   Event packs (Portola)
+```
 
-## Learn more
+### The transport boundary
 
-To learn more about developing your project with Expo, look at the following resources:
+The product never knows whether packets travel over a simulated mesh or real Bluetooth. Everything above `src/transport/types.ts` (`Transport` interface) is transport-agnostic. Real BLE will implement the same interface in a custom dev client with no changes to product code.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### Security model
 
-## Join the community
+- Each device generates an Ed25519 signing keypair (its public key **is** the friend id) and an X25519 box keypair. Secret keys live only in `expo-secure-store` (keychain), never in app storage or any server.
+- A here is JSON, sealed per-friend with `nacl.box` (only that friend can open it) and the packet is signed with Ed25519 (recipients verify the sender; replay is bounded by per-sender sequence numbers + expiry).
+- Relays can dedupe and forward by `packetId`/`ttl` but cannot read contents or display unknown senders.
 
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+There is no account, no phone number, no backend, and no GPS.

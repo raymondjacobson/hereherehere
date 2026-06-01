@@ -1,0 +1,206 @@
+import { useMemo, useState } from 'react';
+import { FlatList, Pressable, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Text } from '@/components/Text';
+import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
+import { Avatar } from '@/components/Avatar';
+import { HereCard } from '@/components/HereCard';
+import { radius, spacing } from '@/theme/theme';
+import { useTheme } from '@/theme/useTheme';
+import { useNow } from '@/hooks/useNow';
+import { useStore } from '@/state/store';
+import { computeBoard, type BoardEntry } from '@/domain/board';
+
+function IconButton({ label, onPress }: { label: string; onPress: () => void }) {
+  const { c } = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: c.surfaceAlt,
+        borderWidth: 1,
+        borderColor: c.border,
+        alignItems: 'center',
+        justifyContent: 'center',
+        opacity: pressed ? 0.8 : 1,
+      })}>
+      <Text style={{ fontSize: 20 }}>{label}</Text>
+    </Pressable>
+  );
+}
+
+export default function BoardScreen() {
+  const router = useRouter();
+  const { c } = useTheme();
+  const insets = useSafeAreaInsets();
+  const now = useNow();
+
+  const identity = useStore((s) => s.identity);
+  const friends = useStore((s) => s.friends);
+  const heres = useStore((s) => s.heres);
+  const [showQuiet, setShowQuiet] = useState(false);
+
+  const ownHere = identity ? heres[identity.signPk] : undefined;
+
+  const latestByAuthor = useMemo(() => {
+    const m = new Map<string, (typeof heres)[string]>();
+    for (const f of friends) {
+      const h = heres[f.id];
+      if (h) m.set(f.id, h);
+    }
+    return m;
+  }, [friends, heres]);
+
+  const board = useMemo(() => computeBoard(friends, latestByAuthor, now), [friends, latestByAuthor, now]);
+
+  const friendsById = useMemo(() => new Map(friends.map((f) => [f.id, f])), [friends]);
+
+  const header = (
+    <View style={{ gap: spacing.lg, paddingBottom: spacing.lg }}>
+      {/* App bar */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <View>
+          <Text variant="meta" color="textSecondary" weight="semibold">
+            hereherehere
+          </Text>
+          <Text variant="title" weight="extrabold">
+            the crowd
+          </Text>
+        </View>
+        <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+          <IconButton label="👥" onPress={() => router.push('/friends/code')} />
+          <IconButton label="⚙️" onPress={() => router.push('/settings')} />
+        </View>
+      </View>
+
+      {/* Own here */}
+      {ownHere && identity ? (
+        <Pressable onPress={() => router.push('/compose')}>
+          <HereCard
+            name={identity.displayName}
+            colorIndex={0}
+            here={ownHere}
+            state={now < ownHere.endsAt ? 'active' : 'expired'}
+            now={now}
+            isSelf
+          />
+        </Pressable>
+      ) : (
+        <Card onPress={() => router.push('/compose')} muted>
+          <Text variant="heading" weight="bold">
+            Post your first here
+          </Text>
+          <Text variant="callout" color="textSecondary" style={{ marginTop: spacing.xs }}>
+            Tell your friends where you’ll be and until when.
+          </Text>
+        </Card>
+      )}
+
+      {board.primary.length > 0 ? (
+        <Text variant="meta" weight="bold" color="textSecondary" style={{ marginTop: spacing.sm }}>
+          FRIENDS · BY LATEST HERE
+        </Text>
+      ) : null}
+    </View>
+  );
+
+  const footer = (
+    <View style={{ paddingTop: spacing.lg, gap: spacing.lg }}>
+      {board.primary.length === 0 && friends.length > 0 ? (
+        <Text variant="callout" color="textSecondary" center style={{ paddingVertical: spacing.lg }}>
+          No recent heres yet. Pull a crowd refresh to check.
+        </Text>
+      ) : null}
+
+      {friends.length === 0 ? (
+        <Card>
+          <Text variant="heading" weight="bold">
+            Add your friends
+          </Text>
+          <Text variant="callout" color="textSecondary" style={{ marginTop: spacing.xs, marginBottom: spacing.lg }}>
+            Scan each other’s friend codes to see each other’s heres.
+          </Text>
+          <Button title="Open friend code" onPress={() => router.push('/friends/code')} />
+        </Card>
+      ) : null}
+
+      {board.quiet.length > 0 ? (
+        <View style={{ gap: spacing.md }}>
+          <Pressable
+            onPress={() => setShowQuiet((v) => !v)}
+            style={({ pressed }) => ({
+              backgroundColor: c.surfaceAlt,
+              borderRadius: radius.md,
+              padding: spacing.lg,
+              opacity: pressed ? 0.85 : 1,
+            })}>
+            <Text variant="callout" weight="semibold" color="textSecondary">
+              {showQuiet ? 'Hide' : 'Show'} {board.quiet.length} friend{board.quiet.length === 1 ? '' : 's'} without recent heres
+            </Text>
+          </Pressable>
+          {showQuiet
+            ? board.quiet.map((f) => (
+                <View key={f.id} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.lg, paddingHorizontal: spacing.sm }}>
+                  <Avatar name={f.displayName} colorIndex={f.colorIndex} size={40} muted />
+                  <Text variant="body" weight="medium" color="textSecondary">
+                    {f.displayName}
+                  </Text>
+                </View>
+              ))
+            : null}
+        </View>
+      ) : null}
+    </View>
+  );
+
+  return (
+    <View style={{ flex: 1, backgroundColor: c.bg }}>
+      <FlatList<BoardEntry>
+        data={board.primary}
+        keyExtractor={(item) => item.friend.id}
+        ListHeaderComponent={header}
+        ListFooterComponent={footer}
+        renderItem={({ item }) => (
+          <HereCard
+            name={item.friend.displayName}
+            colorIndex={item.friend.colorIndex}
+            here={item.here}
+            state={item.state}
+            now={now}
+          />
+        )}
+        ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
+        contentContainerStyle={{
+          paddingTop: insets.top + spacing.md,
+          paddingHorizontal: spacing.xl,
+          paddingBottom: insets.bottom + 160,
+        }}
+        showsVerticalScrollIndicator={false}
+      />
+
+      {/* Bottom actions */}
+      <View
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          paddingHorizontal: spacing.xl,
+          paddingTop: spacing.lg,
+          paddingBottom: insets.bottom + spacing.md,
+          gap: spacing.sm,
+          backgroundColor: c.bg,
+          borderTopWidth: 1,
+          borderTopColor: c.border,
+        }}>
+        <Button title="Refresh the crowd" variant="secondary" onPress={() => router.push('/refresh')} />
+        <Button title="Post here" big onPress={() => router.push('/compose')} />
+      </View>
+    </View>
+  );
+}
