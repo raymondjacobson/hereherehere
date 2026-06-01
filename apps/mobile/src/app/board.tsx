@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, View } from 'react-native';
+import { FlatList, Pressable, useWindowDimensions, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/Text';
@@ -7,6 +7,7 @@ import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { Avatar } from '@/components/Avatar';
 import { HereCard } from '@/components/HereCard';
+import { ImageHero } from '@/components/ImageHero';
 import { radius, spacing } from '@/theme/theme';
 import { useTheme } from '@/theme/useTheme';
 import { useNow } from '@/hooks/useNow';
@@ -70,6 +71,7 @@ export default function BoardScreen() {
   const insets = useSafeAreaInsets();
   const now = useNow();
 
+  const { width } = useWindowDimensions();
   const identity = useStore((s) => s.identity);
   const friends = useStore((s) => s.friends);
   const heres = useStore((s) => s.heres);
@@ -150,10 +152,13 @@ export default function BoardScreen() {
 
   const footer = (
     <View style={{ paddingTop: spacing.lg, gap: spacing.lg }}>
-      {board.primary.length === 0 && friends.length > 0 ? (
-        <Text variant="callout" color="textSecondary" center style={{ paddingVertical: spacing.lg }}>
-          No recent messages yet. Pull a crowd refresh to check.
-        </Text>
+      {board.primary.length === 0 ? (
+        <View style={{ alignItems: 'center', gap: spacing.sm, paddingTop: spacing.md }}>
+          <ImageHero source={require('../../assets/states/empty-board.png')} size={Math.min(width * 0.72, 300)} />
+          <Text variant="callout" color="textSecondary" center style={{ paddingHorizontal: spacing.lg }}>
+            No messages from friends yet. Pull a crowd refresh to find them.
+          </Text>
+        </View>
       ) : null}
 
       {board.quiet.length > 0 ? (
