@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, useWindowDimensions, View } from 'react-native';
+import { FlatList, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/Text';
@@ -16,6 +17,9 @@ import { useStore } from '@/state/store';
 import { computeBoard, type BoardEntry } from '@/domain/board';
 import { mockTransport } from '@/transport/mock';
 import { motifs } from '@/assets/motifs';
+
+/** Height of the pinned glass top bar below the safe-area inset. */
+const BAR_BODY = 96;
 
 /** Friendly indicator of how many nearby phones could carry your messages. */
 function NearbyChip({ count, onPress }: { count: number; onPress: () => void }) {
@@ -84,22 +88,10 @@ export default function BoardScreen() {
 
   const friendsById = useMemo(() => new Map(friends.map((f) => [f.id, f])), [friends]);
 
+  const barHeight = insets.top + BAR_BODY;
+
   const header = (
     <View style={{ gap: spacing.lg, paddingBottom: spacing.lg }}>
-      {/* App bar */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <View>
-          <Text variant="title" weight="extrabold">
-            hereherehere
-          </Text>
-          <NearbyChip count={nearby} onPress={() => router.push('/refresh')} />
-        </View>
-        <View style={{ flexDirection: 'row', gap: spacing.md }}>
-          <MotifButton motif={motifs.connect} accessibilityLabel="Friend code" onPress={() => router.push('/friends/code')} />
-          <MotifButton motif={motifs.settings} accessibilityLabel="Settings" onPress={() => router.push('/settings')} />
-        </View>
-      </View>
-
       {/* Own here */}
       {ownHere && identity ? (
         <Pressable onPress={() => router.push('/compose')}>
@@ -197,12 +189,43 @@ export default function BoardScreen() {
         )}
         ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
         contentContainerStyle={{
-          paddingTop: insets.top + spacing.md,
+          paddingTop: barHeight + spacing.md,
           paddingHorizontal: spacing.xl,
           paddingBottom: insets.bottom + 160,
         }}
         showsVerticalScrollIndicator={false}
       />
+
+      {/* Pinned frosted-glass top bar — the board scrolls underneath it. */}
+      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: barHeight }}>
+        <BlurView
+          intensity={Platform.OS === 'ios' ? 70 : 24}
+          tint="light"
+          experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
+          style={StyleSheet.absoluteFill}
+        />
+        <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: c.border }} />
+        <View
+          style={{
+            flex: 1,
+            paddingTop: insets.top,
+            paddingHorizontal: spacing.xl,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}>
+          <View>
+            <Text variant="title" weight="extrabold">
+              hereherehere
+            </Text>
+            <NearbyChip count={nearby} onPress={() => router.push('/refresh')} />
+          </View>
+          <View style={{ flexDirection: 'row', gap: spacing.md }}>
+            <MotifButton motif={motifs.connect} accessibilityLabel="Friend code" onPress={() => router.push('/friends/code')} />
+            <MotifButton motif={motifs.settings} accessibilityLabel="Settings" onPress={() => router.push('/settings')} />
+          </View>
+        </View>
+      </View>
 
       {/* Bottom actions */}
       <View
