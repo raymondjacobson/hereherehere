@@ -95,7 +95,7 @@ export default function BoardScreen() {
           <NearbyChip count={nearby} onPress={() => router.push('/refresh')} />
         </View>
         <View style={{ flexDirection: 'row', gap: spacing.md }}>
-          <MotifButton motif={motifs.qr} accessibilityLabel="Friend code" onPress={() => router.push('/friends/code')} />
+          <MotifButton motif={motifs.connect} accessibilityLabel="Friend code" onPress={() => router.push('/friends/code')} />
           <MotifButton motif={motifs.settings} accessibilityLabel="Settings" onPress={() => router.push('/settings')} />
         </View>
       </View>
