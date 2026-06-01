@@ -1,5 +1,6 @@
+import { type ComponentType } from 'react';
 import { Share, View } from 'react-native';
-import QRCode from 'react-native-qrcode-svg';
+import QRCodeLib from 'react-native-qrcode-svg';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Pressable } from 'react-native';
@@ -11,6 +12,15 @@ import { useTheme } from '@/theme/useTheme';
 import { useStore } from '@/state/store';
 import { fingerprint } from '@/crypto/keys';
 import { buildFriendLink } from '@/domain/friendCode';
+
+// react-native-qrcode-svg ships class-component types that don't satisfy
+// React 19's JSX element typing; the runtime component is fine.
+const QRCode = QRCodeLib as unknown as ComponentType<{
+  value: string;
+  size?: number;
+  color?: string;
+  backgroundColor?: string;
+}>;
 
 export default function FriendCodeScreen() {
   const router = useRouter();
