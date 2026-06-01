@@ -8,7 +8,6 @@ import { Illustration } from '@/components/Illustration';
 import { ImageHero } from '@/components/ImageHero';
 import { spacing } from '@/theme/theme';
 import { useTheme } from '@/theme/useTheme';
-import { useStore } from '@/state/store';
 import { AVAILABLE_PACKS } from '@/data/packs/portola';
 
 type Page = {
@@ -55,10 +54,7 @@ export default function ExplainerScreen() {
       return;
     }
     if (AVAILABLE_PACKS.length > 0) router.push('/onboarding/packs');
-    else {
-      useStore.getState().completeOnboarding();
-      router.replace('/board');
-    }
+    else router.push('/onboarding/permissions');
   }
 
   return (

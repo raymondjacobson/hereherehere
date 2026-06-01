@@ -29,6 +29,12 @@ type AppState = {
   seenPacketIds: string[];
   installedPacks: EventPack[];
 
+  // permissions (cached for display; the OS stays source of truth for notifications)
+  bluetoothEnabled: boolean;
+  notificationsEnabled: boolean;
+  /** whether the app-start permissions priming has been shown */
+  permissionsPrompted: boolean;
+
   // lifecycle
   init: () => Promise<void>;
 
@@ -36,6 +42,11 @@ type AppState = {
   createIdentity: (displayName: string) => Promise<void>;
   setDisplayName: (name: string) => void;
   completeOnboarding: () => void;
+
+  // permissions
+  setBluetoothEnabled: (v: boolean) => void;
+  setNotificationsEnabled: (v: boolean) => void;
+  markPermissionsPrompted: () => void;
 
   // friends
   addFriend: (payload: FriendCodePayload) => Friend;
@@ -69,6 +80,9 @@ export const useStore = create<AppState>()(
       heres: {},
       seenPacketIds: [],
       installedPacks: [],
+      bluetoothEnabled: false,
+      notificationsEnabled: false,
+      permissionsPrompted: false,
 
       init: async () => {
         await loadSecrets();
@@ -100,6 +114,10 @@ export const useStore = create<AppState>()(
       },
 
       completeOnboarding: () => set({ onboardingComplete: true }),
+
+      setBluetoothEnabled: (v) => set({ bluetoothEnabled: v }),
+      setNotificationsEnabled: (v) => set({ notificationsEnabled: v }),
+      markPermissionsPrompted: () => set({ permissionsPrompted: true }),
 
       addFriend: (payload) => {
         const id = friendIdOf({ signPk: payload.s });
@@ -234,6 +252,9 @@ export const useStore = create<AppState>()(
           heres: {},
           seenPacketIds: [],
           installedPacks: [],
+          bluetoothEnabled: false,
+          notificationsEnabled: false,
+          permissionsPrompted: false,
         });
       },
     }),
@@ -247,6 +268,9 @@ export const useStore = create<AppState>()(
         heres: s.heres,
         seenPacketIds: s.seenPacketIds,
         installedPacks: s.installedPacks,
+        bluetoothEnabled: s.bluetoothEnabled,
+        notificationsEnabled: s.notificationsEnabled,
+        permissionsPrompted: s.permissionsPrompted,
       }),
       onRehydrateStorage: () => (state) => {
         state?.init().finally(() => useStore.setState({ hydrated: true }));
