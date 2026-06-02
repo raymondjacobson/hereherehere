@@ -95,23 +95,20 @@ h1 {
   width: 100%;
   height: auto;
   display: block;
-  /* Soft-edge the image so its light backdrop melts into the page gradient,
-     keeping most of the scene visible. */
-  -webkit-mask-image: radial-gradient(116% 110% at 50% 44%, #000 48%, transparent 80%);
-  mask-image: radial-gradient(116% 110% at 50% 44%, #000 48%, transparent 80%);
+  /* The clay crowd is a transparent cut-out, so it floats on the glow below. */
 }
 
-/* Soft pink/cyan/yellow light glowing behind the clay crowd. */
+/* Soft pink/cyan/yellow light glowing behind the floating clay crowd. */
 .hero-vignette {
   position: absolute;
-  inset: -16%;
+  inset: -10%;
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(circle at 38% 40%, rgba(125, 235, 255, 0.40), transparent 55%),
-    radial-gradient(circle at 66% 38%, rgba(255, 122, 190, 0.42), transparent 55%),
-    radial-gradient(circle at 50% 64%, rgba(255, 239, 117, 0.34), transparent 58%);
-  filter: blur(26px);
+    radial-gradient(circle at 38% 42%, rgba(125, 235, 255, 0.32), transparent 56%),
+    radial-gradient(circle at 66% 40%, rgba(255, 122, 190, 0.34), transparent 56%),
+    radial-gradient(circle at 50% 66%, rgba(255, 239, 117, 0.26), transparent 60%);
+  filter: blur(30px);
 }
 
 .blob {
