@@ -30,6 +30,7 @@ export class MockTransport implements Transport {
   private nearby = 0;
   private nearbyHandlers = new Set<(n: number) => void>();
   private ambientTimer: ReturnType<typeof setInterval> | null = null;
+  private trickleTimer: ReturnType<typeof setInterval> | null = null;
 
   configure(local: { signPk: string; boxPk: string }) {
     this.local = local;
@@ -84,6 +85,9 @@ export class MockTransport implements Transport {
     if (this.ambientTimer) return;
     this.rollNearby();
     this.ambientTimer = setInterval(() => this.rollNearby(), 3500);
+    // While the app is open we're always listening: occasionally a friend's
+    // fresh message trickles in on its own (no manual refresh required).
+    this.trickleTimer = setInterval(() => this.trickle(), 8000);
   }
 
   stopAmbient() {
@@ -91,6 +95,32 @@ export class MockTransport implements Transport {
       clearInterval(this.ambientTimer);
       this.ambientTimer = null;
     }
+    if (this.trickleTimer) {
+      clearInterval(this.trickleTimer);
+      this.trickleTimer = null;
+    }
+  }
+
+  /** Occasionally deliver one peer's fresh message — the always-on live sync. */
+  private trickle() {
+    if (!this.peers.length || Math.random() > 0.5) return;
+    const peer = this.peers[Math.floor(Math.random() * this.peers.length)];
+    this.emit(this.packetsFromPeer(peer, Date.now()));
+  }
+
+  /**
+   * A high-intensity scan burst (pull-to-refresh): immediately pull fresh
+   * messages from a handful of nearby peers. Resolves when the burst settles.
+   */
+  async boost(): Promise<number> {
+    const pool = [...this.peers];
+    const k = Math.min(pool.length, 1 + Math.floor(Math.random() * 3));
+    for (let i = 0; i < k; i++) {
+      const peer = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+      this.emit(this.packetsFromPeer(peer, Date.now()));
+    }
+    await sleep(1100);
+    return k;
   }
 
   private emit(packets: RelayPacket[]) {

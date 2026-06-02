@@ -45,7 +45,11 @@ export interface Transport {
    *  current value. Returns an unsubscribe fn. */
   onNearby(handler: (count: number) => void): () => void;
 
-  /** Start/stop ambient peer discovery while the app is foregrounded. */
+  /** Start/stop ambient peer discovery while the app is foregrounded. While
+   *  ambient, fresh messages trickle in on their own via onInbound. */
   startAmbient(): void;
   stopAmbient(): void;
+
+  /** A high-intensity scan burst (pull-to-refresh). Resolves when it settles. */
+  boost(): Promise<number>;
 }
