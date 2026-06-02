@@ -58,23 +58,38 @@ export default function BoardScreen() {
   const refreshingRef = useRef(false);
   const scrollY = useRef(new Animated.Value(0)).current;
   const spin = useRef(new Animated.Value(0)).current;
+  // Reveal gap for programmatic refreshes (e.g. "Refresh the crowd now"): there's
+  // no real pull, so we open a little space at the top so the motif sits in a gap
+  // instead of on the title — mimicking a manual pull-down.
+  const reveal = useRef(new Animated.Value(0)).current;
 
-  // The native RefreshControl owns the pull/hold/retract (smooth); we just hide
-  // its spinner and overlay our motif, spinning while the boost runs.
-  const triggerRefresh = useCallback(async () => {
-    if (refreshingRef.current) return;
-    refreshingRef.current = true;
-    spin.setValue(0);
-    setRefreshing(true);
-    const loop = Animated.loop(
-      Animated.timing(spin, { toValue: 1, duration: 900, easing: Easing.linear, useNativeDriver: false }),
-    );
-    loop.start();
-    await boost();
-    loop.stop();
-    refreshingRef.current = false;
-    setRefreshing(false);
-  }, [boost, spin]);
+  // The native RefreshControl owns the pull/hold/retract for gesture refreshes
+  // (smooth); we hide its spinner and overlay our motif, spinning while the boost
+  // runs. For programmatic refreshes there's no gesture, so `withReveal` animates
+  // the gap ourselves.
+  const triggerRefresh = useCallback(
+    async (withReveal = false) => {
+      if (refreshingRef.current) return;
+      refreshingRef.current = true;
+      spin.setValue(0);
+      setRefreshing(true);
+      if (withReveal) {
+        Animated.timing(reveal, { toValue: PULL, duration: 220, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+      }
+      const loop = Animated.loop(
+        Animated.timing(spin, { toValue: 1, duration: 900, easing: Easing.linear, useNativeDriver: false }),
+      );
+      loop.start();
+      await boost();
+      loop.stop();
+      if (withReveal) {
+        Animated.timing(reveal, { toValue: 0, duration: 260, easing: Easing.inOut(Easing.cubic), useNativeDriver: false }).start();
+      }
+      refreshingRef.current = false;
+      setRefreshing(false);
+    },
+    [boost, spin, reveal],
+  );
 
   // Arriving from "Refresh the crowd now" (e.g. just after posting) triggers a
   // one-shot boost in place rather than a full-screen takeover.
@@ -83,7 +98,7 @@ export default function BoardScreen() {
   useEffect(() => {
     if (refreshParam === '1' && !autoStarted.current) {
       autoStarted.current = true;
-      triggerRefresh();
+      triggerRefresh(true);
     }
   }, [refreshParam, triggerRefresh]);
 
@@ -107,7 +122,11 @@ export default function BoardScreen() {
   const spinRotate = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
 
   const header = (
-    <View style={{ gap: spacing.lg, paddingBottom: spacing.lg }}>
+    <View>
+      {/* Reveal gap opened on a programmatic "refresh now" so the motif sits
+          above the title instead of over it. Zero-height otherwise. */}
+      <Animated.View pointerEvents="none" style={{ height: reveal }} />
+      <View style={{ gap: spacing.lg, paddingBottom: spacing.lg }}>
       {/* App bar — scrolls away with the content */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <View>
@@ -152,6 +171,7 @@ export default function BoardScreen() {
           FRIENDS
         </Text>
       ) : null}
+      </View>
     </View>
   );
 
@@ -243,7 +263,7 @@ export default function BoardScreen() {
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
-            onRefresh={triggerRefresh}
+            onRefresh={() => triggerRefresh()}
             tintColor="transparent"
             colors={['transparent']}
             progressViewOffset={insets.top + 6}
