@@ -1,4 +1,4 @@
-import type { RelayPacket } from '@/domain/types';
+import type { MeshEngine } from '@/mesh/engine';
 
 export type SessionPhase = 'scanning' | 'trading' | 'checking' | 'updating' | 'done';
 
@@ -9,31 +9,32 @@ export type SessionProgress = {
   peersSeen: number;
 };
 
-export type InboundHandler = (packets: RelayPacket[]) => void;
+export type SessionResult = {
+  /** Author signPks whose latest status changed for us this session. */
+  updatedAuthors: string[];
+  /** Number of peers we actually synced with. */
+  peersSynced: number;
+};
 
 /**
- * The mesh transport abstraction. The product layer never knows whether packets
- * arrive over a simulated mesh or real Bluetooth — only this contract matters.
+ * The mesh transport abstraction. The product layer never knows whether sync
+ * happens over a simulated mesh or real Bluetooth — only this contract matters.
  *
- * Real BLE will implement this same interface behind a native module + dev
- * client, with no changes to the product code above it.
+ * A transport drives PeerSessions between the local MeshEngine and discovered
+ * peers; the engine ingests received objects during the session. Real BLE will
+ * implement this same interface behind a native module + dev client, with no
+ * changes to the product code above it.
  */
 export interface Transport {
-  /** Identify the local device so the transport can address/relay correctly. */
-  configure(local: { signPk: string; boxPk: string }): void;
-
-  /** Queue our own outgoing packets to be advertised/relayed during sessions. */
-  enqueue(packets: RelayPacket[]): void;
-
-  /** Subscribe to packets arriving from the mesh. Returns an unsubscribe fn. */
-  onInbound(handler: InboundHandler): () => void;
+  /** Bind the local node whose sessions this transport will drive. */
+  configure(node: MeshEngine): void;
 
   /**
-   * Run one crowd-refresh session for ~durationMs. Discovers peers, trades
-   * packet inventories, emits inbound packets via onInbound, and resolves with
-   * everything received this session.
+   * Run one crowd-refresh session for ~durationMs: discover peers, run
+   * anti-entropy sync, and let the engine ingest. Resolves with a summary of
+   * what changed.
    */
-  runSession(durationMs: number, onProgress?: (p: SessionProgress) => void): Promise<RelayPacket[]>;
+  runSession(durationMs: number, onProgress?: (p: SessionProgress) => void): Promise<SessionResult>;
 
   /** Abort an in-flight session. */
   stopSession(): void;

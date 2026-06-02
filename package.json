@@ -9,6 +9,7 @@
     "mobile": "npm run start --workspace apps/mobile",
     "mobile:ios": "npm run ios --workspace apps/mobile",
     "web": "npm run dev --workspace apps/web",
-    "web:build": "npm run build --workspace apps/web"
+    "web:build": "npm run build --workspace apps/web",
+    "test": "npm run test --workspace apps/mobile"
   }
 }
