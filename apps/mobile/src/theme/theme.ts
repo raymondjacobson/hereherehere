@@ -99,10 +99,11 @@ export const radius = {
 } as const;
 
 // Quicksand — readable body & UI (buttons, labels, names, settings, copy).
-// Quicksand tops out at 700, so `extrabold` maps to the bold cut.
+// Quicksand's 400 reads too thin on device, so body text starts at the 500
+// (Medium) cut and the scale shifts up a notch, topping out at the 700 bold.
 export const fontFamily = {
-  regular: 'Quicksand_400Regular',
-  medium: 'Quicksand_500Medium',
+  regular: 'Quicksand_500Medium',
+  medium: 'Quicksand_600SemiBold',
   semibold: 'Quicksand_600SemiBold',
   bold: 'Quicksand_700Bold',
   extrabold: 'Quicksand_700Bold',
