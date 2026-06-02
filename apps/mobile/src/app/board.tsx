@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, useWindowDimensions, View } from 'react-native';
+import { Animated, Easing, FlatList, Pressable, useWindowDimensions, View } from 'react-native';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/Text';
@@ -16,6 +17,9 @@ import { useLiveSync } from '@/hooks/useLiveSync';
 import { useStore } from '@/state/store';
 import { computeBoard, type BoardEntry } from '@/domain/board';
 import { motifs } from '@/assets/motifs';
+
+/** Pull distance (pts) past which releasing triggers a refresh boost. */
+const PULL = 72;
 
 /**
  * Top-left live status: how many phones we're hearing nearby. Always on while
@@ -47,13 +51,29 @@ export default function BoardScreen() {
   const [showQuiet, setShowQuiet] = useState(false);
   // Live sync: friends' messages arrive on their own while the board is open.
   const { nearby, boost } = useLiveSync();
-  const [refreshing, setRefreshing] = useState(false);
 
-  const onRefresh = useCallback(async () => {
+  // Custom pull-to-refresh: the refresh motif winds as you pull, then spins
+  // while a boost is in flight.
+  const [refreshing, setRefreshing] = useState(false);
+  const refreshingRef = useRef(false);
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const offsetRef = useRef(0);
+  const spin = useRef(new Animated.Value(0)).current;
+
+  const triggerRefresh = useCallback(async () => {
+    if (refreshingRef.current) return;
+    refreshingRef.current = true;
     setRefreshing(true);
+    spin.setValue(0);
+    const loop = Animated.loop(
+      Animated.timing(spin, { toValue: 1, duration: 900, easing: Easing.linear, useNativeDriver: false }),
+    );
+    loop.start();
     await boost();
+    loop.stop();
+    refreshingRef.current = false;
     setRefreshing(false);
-  }, [boost]);
+  }, [boost, spin]);
 
   // Arriving from "Refresh the crowd now" (e.g. just after posting) triggers a
   // one-shot boost in place rather than a full-screen takeover.
@@ -62,9 +82,9 @@ export default function BoardScreen() {
   useEffect(() => {
     if (refreshParam === '1' && !autoStarted.current) {
       autoStarted.current = true;
-      onRefresh();
+      triggerRefresh();
     }
-  }, [refreshParam, onRefresh]);
+  }, [refreshParam, triggerRefresh]);
 
   const ownHere = identity ? heres[identity.signPk] : undefined;
 
@@ -80,6 +100,11 @@ export default function BoardScreen() {
   const board = useMemo(() => computeBoard(friends, latestByAuthor, now), [friends, latestByAuthor, now]);
 
   const friendsById = useMemo(() => new Map(friends.map((f) => [f.id, f])), [friends]);
+
+  const pullOpacity = scrollY.interpolate({ inputRange: [-PULL, -12, 0], outputRange: [1, 0.12, 0], extrapolate: 'clamp' });
+  const pullScale = scrollY.interpolate({ inputRange: [-PULL, 0], outputRange: [1, 0.5], extrapolate: 'clamp' });
+  const pullRotate = scrollY.interpolate({ inputRange: [-PULL, 0], outputRange: ['0deg', '-150deg'], extrapolate: 'clamp' });
+  const spinRotate = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
 
   const header = (
     <View style={{ gap: spacing.lg, paddingBottom: spacing.lg }}>
@@ -213,18 +238,38 @@ export default function BoardScreen() {
           paddingBottom: insets.bottom + 130,
         }}
         showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.textSecondary} />
-        }
+        scrollEventThrottle={16}
+        onScroll={(e) => {
+          const y = e.nativeEvent.contentOffset.y;
+          offsetRef.current = y;
+          scrollY.setValue(y);
+        }}
+        onScrollEndDrag={() => {
+          if (offsetRef.current <= -PULL) triggerRefresh();
+        }}
       />
 
-      {/* Floating Post action — pull down to boost the crowd refresh */}
-      <View
+      {/* Pull-to-refresh indicator: refresh motif winds on pull, spins while boosting */}
+      <Animated.View
+        pointerEvents="none"
         style={{
           position: 'absolute',
-          right: spacing.xl,
-          bottom: insets.bottom + spacing.md,
+          top: insets.top + 2,
+          left: 0,
+          right: 0,
+          alignItems: 'center',
+          zIndex: 20,
+          opacity: refreshing ? 1 : pullOpacity,
+          transform: [
+            { scale: refreshing ? 1 : pullScale },
+            { rotate: refreshing ? spinRotate : pullRotate },
+          ],
         }}>
+        <Image source={motifs.refresh} style={{ width: 44, height: 44 }} contentFit="contain" />
+      </Animated.View>
+
+      {/* Floating Post action — pull down to boost the crowd refresh */}
+      <View style={{ position: 'absolute', right: spacing.xl, bottom: insets.bottom + spacing.md }}>
         <MotifButton
           motif={motifs.post}
           size={64}
