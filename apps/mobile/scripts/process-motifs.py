@@ -37,7 +37,7 @@ from scipy import ndimage
 
 SRC = sys.argv[1] if len(sys.argv) > 1 else os.path.expanduser("~/Downloads/hhh icons")
 DST = os.path.join(os.path.dirname(__file__), "..", "assets", "motifs")
-BOTTLES = {"message", "encrypted", "old_message"}
+BOTTLES = {"message", "encrypted", "old_message", "post"}
 SIZES = {"": 192, "@2x": 384, "@3x": 576}
 
 
@@ -66,7 +66,7 @@ def solid_matte(rgb, sat_max=0.16, val_min=0.74):
     core = ndimage.binary_erosion(fg, iterations=2)       # shed white-mixed rim
     a = np.clip(ndimage.gaussian_filter(core.astype(float), 1.2), 0, 1)
     a = np.clip((a - 0.30) / (0.92 - 0.30), 0, 1)         # defringe / crisp edge
-    return rgb, a * 255
+    return rgb, a * 255, a > 0.5
 
 
 def bottle_matte(rgb):
@@ -77,16 +77,23 @@ def bottle_matte(rgb):
     sil = ndimage.binary_fill_holes(edges)
     sil = ndimage.binary_opening(ndimage.binary_erosion(sil, iterations=2), iterations=2)
     lbl, n = ndimage.label(sil)
-    if n >= 1:                                            # keep largest blob
+    if n >= 1:                                            # bottle = largest blob
         s = ndimage.sum(np.ones_like(lbl), lbl, range(1, n + 1))
         sil = lbl == (1 + int(np.argmax(s)))
+    # Solid clay (cork, note, ring, plus any separate element like a cross) is
+    # detected across the WHOLE image, not just inside the bottle, so motifs
+    # that pair a bottle with a standalone solid keep that element opaque.
     mx = rgb.max(2) / 255
     mn = rgb.min(2) / 255
     sat = np.where(mx > 0, (mx - mn) / np.maximum(mx, 1e-6), 0)
     val = mx
     dist = np.sqrt(((rgb - bgc) ** 2).sum(2))
-    solid = ((sat > 0.18) | (val < 0.62)) & (dist > 30) & sil
+    solid = ((sat > 0.18) | (val < 0.62)) & (dist > 30)
     solid = ndimage.binary_closing(solid, iterations=2)
+    lbl, n = ndimage.label(solid)                         # drop tiny specks
+    if n > 1:
+        s = ndimage.sum(np.ones_like(lbl), lbl, range(1, n + 1))
+        solid = np.isin(lbl, [i + 1 for i, v in enumerate(s) if v > 500])
     glass = sil & ~solid
     a = np.zeros(gray.shape)
     a[glass] = 0.42                                       # frosted-glass opacity
@@ -94,16 +101,16 @@ def bottle_matte(rgb):
     a = ndimage.gaussian_filter(a, 1.0)
     col = rgb.copy()
     col[glass] = 0.55 * np.array([248, 248, 250.0]) + 0.45 * rgb[glass]
-    return np.clip(col, 0, 255), np.clip(a, 0, 1) * 255
+    return np.clip(col, 0, 255), np.clip(a, 0, 1) * 255, (sil | solid)
 
 
 def run(path):
     name = os.path.splitext(os.path.basename(path))[0]
     rgb = np.asarray(Image.open(path).convert("RGB")).astype(np.float64)
     h, w, _ = rgb.shape
-    col, alpha = bottle_matte(rgb) if name in BOTTLES else solid_matte(rgb)
+    col, alpha, cover = bottle_matte(rgb) if name in BOTTLES else solid_matte(rgb)
     im = Image.fromarray(np.dstack([col, alpha]).astype(np.uint8))
-    ys, xs = np.where(alpha > 128)
+    ys, xs = np.where(cover)
     x0, x1, y0, y1 = xs.min(), xs.max(), ys.min(), ys.max()
     pad = int(max(x1 - x0, y1 - y0) * 0.07)
     im = im.crop((max(0, x0 - pad), max(0, y0 - pad), min(w, x1 + pad + 1), min(h, y1 + pad + 1)))

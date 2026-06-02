@@ -11,8 +11,8 @@ import { type ImageSourcePropType } from 'react-native';
  * device density automatically. Source plates live in `~/Downloads/hhh icons`
  * and are reprocessed by `scripts/process-motifs.py`.
  *
- * The three bottle motifs (`message`, `encrypted`, `oldMessage`) keep their
- * glass as a semi-transparent frosted shape, so they read best on lighter
+ * The four bottle motifs (`message`, `encrypted`, `oldMessage`, `post`) keep
+ * their glass as a semi-transparent frosted shape, so they read best on lighter
  * surfaces; the solid motifs work on any background, light or dark.
  */
 export const motifs = {
@@ -22,15 +22,18 @@ export const motifs = {
   heart: require('./heart.png'),
   message: require('./message.png'),
   minus: require('./minus.png'),
+  moon: require('./moon.png'),
   new: require('./new.png'),
-  plus: require('./plus.png'),
   notification: require('./notification.png'),
   oldMessage: require('./old_message.png'),
   pathfind: require('./pathfind.png'),
+  plus: require('./plus.png'),
   post: require('./post.png'),
   qr: require('./qr.png'),
   refresh: require('./refresh.png'),
   settings: require('./settings.png'),
+  sparkles: require('./sparkles.png'),
+  sun: require('./sun.png'),
 } satisfies Record<string, ImageSourcePropType>;
 
 export type MotifName = keyof typeof motifs;
