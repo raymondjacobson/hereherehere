@@ -3,7 +3,6 @@ import { ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { spacing } from '@/theme/theme';
 import { useTheme } from '@/theme/useTheme';
-import { Grain } from './Grain';
 import { Glow } from './Glow';
 
 type Props = {
@@ -34,7 +33,6 @@ export function Screen({ children, scroll, padded = true, contentStyle, edges }:
   return (
     <View style={[styles.fill, { backgroundColor: c.bg }]}>
       <Glow />
-      <Grain />
       {scroll ? (
         <ScrollView
           style={styles.fill}
