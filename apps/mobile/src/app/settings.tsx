@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, Text as RNText, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/Text';
@@ -14,6 +14,7 @@ import { useTheme } from '@/theme/useTheme';
 import { useStore } from '@/state/store';
 import { AVAILABLE_PACKS } from '@/data/packs/portola';
 import { PERMISSIONS } from '@/permissions/catalog';
+import { defaultEmojiFor } from '@/data/emoji';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -43,6 +44,9 @@ export default function SettingsScreen() {
 
   const [name, setName] = useState(identity?.displayName ?? '');
   const [seeded, setSeeded] = useState(false);
+  const [emojiOpen, setEmojiOpen] = useState(false);
+
+  const currentGlyph = identity?.emoji?.trim() || (identity?.signPk ? defaultEmojiFor(identity.signPk) : '🙂');
 
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
@@ -94,7 +98,20 @@ export default function SettingsScreen() {
               </View>
             </View>
           </Card>
-          <EmojiPicker value={identity?.emoji} onSelect={setEmoji} />
+          <Card onPress={() => setEmojiOpen((o) => !o)}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text variant="body" weight="semibold">
+                Your emoji
+              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                <RNText style={{ fontSize: 22 }}>{currentGlyph}</RNText>
+                <Text variant="callout" weight="bold" color="accent">
+                  {emojiOpen ? 'Done' : 'Change'}
+                </Text>
+              </View>
+            </View>
+          </Card>
+          {emojiOpen ? <EmojiPicker value={identity?.emoji} onSelect={setEmoji} tile={44} /> : null}
         </Section>
 
         <Section title="Friends">
