@@ -31,7 +31,6 @@ export default function ComposeScreen() {
   const postHere = useStore((s) => s.postHere);
 
   const [whereText, setWhereText] = useState('');
-  const [whereFocused, setWhereFocused] = useState(false);
   const [note, setNote] = useState('');
   const [startsAt, setStartsAt] = useState(() => Date.now());
   const [endsAt, setEndsAt] = useState(() => Date.now() + HOUR);
@@ -137,17 +136,15 @@ export default function ComposeScreen() {
               big
               value={whereText}
               onChangeText={setWhereText}
-              onFocus={() => setWhereFocused(true)}
-              onBlur={() => setWhereFocused(false)}
               placeholder="a stage, a landmark, anywhere"
               returnKeyType="done"
-              autoFocus
             />
-            {whereFocused && suggestions.length > 0 ? (
+            {suggestions.length > 0 ? (
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                keyboardShouldPersistTaps="handled"
+                keyboardShouldPersistTaps="always"
+                keyboardDismissMode="none"
                 contentContainerStyle={{ gap: spacing.sm, paddingVertical: 2 }}>
                 {suggestions.map((s) => (
                   <Chip key={s.key} label={s.label} onPress={() => pickSuggestion(s.label, s.setEndsAt)} />
