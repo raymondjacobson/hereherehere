@@ -277,6 +277,12 @@ footer {
   flex: 0 0 auto;
 }
 
+.store-logo {
+  flex: 0 0 auto;
+  height: 26px;
+  width: auto;
+}
+
 .btn.store.appstore {
   border-color: var(--border-blue);
 }
