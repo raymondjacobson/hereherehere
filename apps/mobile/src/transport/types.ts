@@ -58,4 +58,27 @@ export interface Transport {
 
   /** A high-intensity scan burst (pull-to-refresh). Resolves when it settles. */
   boost(): Promise<number>;
+
+  /** Prime OS permissions for this transport (e.g. trigger the iOS Bluetooth
+   *  prompt by instantiating CoreBluetooth). Resolves true if usable. Optional:
+   *  the simulated transport has nothing to prompt for. */
+  requestPermission?(): Promise<boolean>;
+
+  /** A live snapshot for the in-app debug panel. */
+  debug(): TransportDebug;
 }
+
+/** Diagnostic snapshot shown in Settings → Bluetooth (debug). */
+export type TransportDebug = {
+  kind: 'simulated' | 'ble';
+  /** CoreBluetooth state label (e.g. PoweredOn / Unauthorized); 'n/a' for the simulator. */
+  bluetoothState: string;
+  /** Scanning for peers (central role). */
+  scanning: boolean;
+  /** Advertising our service (peripheral role). */
+  advertising: boolean;
+  /** Nearby reachable peers. */
+  nearby: number;
+  /** Centrals currently in a session with us (peripheral role). */
+  connectedPeers: number;
+};

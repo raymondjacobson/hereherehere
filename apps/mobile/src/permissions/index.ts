@@ -1,15 +1,15 @@
 import * as Notifications from 'expo-notifications';
+import { transport, isSimulatedTransport } from '@/transport';
 
 /**
  * Permission requests, in one place so the priming screen and Settings share
  * the same calls.
  *
- * Notifications use the real OS prompt (expo-notifications). Bluetooth is
- * modeled as app state for now: the mesh is still *simulated* (see
- * transport/mock) and the app ships no native Core Bluetooth module, so there
- * is no OS Bluetooth dialog to trigger from JS yet. When the real BLE transport
- * lands, swap `requestBluetooth` for the native request (e.g. instantiating a
- * CBCentralManager) — the call sites won't have to change.
+ * Notifications use the real OS prompt (expo-notifications). Bluetooth, in a
+ * native build, primes CoreBluetooth via the active transport so the iOS prompt
+ * fires here (e.g. when the user taps Allow in onboarding) rather than later
+ * when the board starts scanning. In Expo Go the mesh is simulated, so there's
+ * nothing to prompt for and we just reflect intent.
  */
 
 export type PermissionStatus = 'granted' | 'denied' | 'undetermined';
@@ -32,7 +32,8 @@ export async function requestNotifications(): Promise<boolean> {
 }
 
 export async function requestBluetooth(): Promise<boolean> {
-  // No native BLE module yet — see file header. Reflect the user's intent so
-  // the (simulated) mesh and the priming UI share one switch.
-  return true;
+  // Expo Go / simulated mesh: nothing to prompt for.
+  if (isSimulatedTransport) return true;
+  // Native build: trigger the iOS Bluetooth prompt now by priming CoreBluetooth.
+  return transport.requestPermission?.() ?? true;
 }

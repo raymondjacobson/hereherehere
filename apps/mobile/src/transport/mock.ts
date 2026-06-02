@@ -91,6 +91,17 @@ export class MockTransport implements Transport {
     this.setNearby(lo + Math.floor(Math.random() * (base - lo + 1)));
   }
 
+  debug() {
+    return {
+      kind: 'simulated' as const,
+      bluetoothState: 'n/a (simulated)',
+      scanning: this.ambientTimer != null,
+      advertising: false,
+      nearby: this.nearby,
+      connectedPeers: 0,
+    };
+  }
+
   startAmbient() {
     if (this.ambientTimer) return;
     this.rollNearby();

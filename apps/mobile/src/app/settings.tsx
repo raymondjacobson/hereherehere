@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text as RNText, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,6 +15,8 @@ import { useStore } from '@/state/store';
 import { AVAILABLE_PACKS } from '@/data/packs/portola';
 import { PERMISSIONS } from '@/permissions/catalog';
 import { defaultEmojiFor } from '@/data/emoji';
+import { transport } from '@/transport';
+import type { TransportDebug } from '@/transport/types';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -24,6 +26,40 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       </Text>
       {children}
     </View>
+  );
+}
+
+/** Live transport diagnostics — polls the active transport once a second. */
+function BleDebug() {
+  const { c } = useTheme();
+  const [info, setInfo] = useState<TransportDebug>(() => transport.debug());
+  useEffect(() => {
+    const id = setInterval(() => setInfo(transport.debug()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const rows: [string, string][] = [
+    ['Transport', info.kind === 'ble' ? 'Bluetooth (real)' : 'Simulated mesh'],
+    ['Bluetooth state', info.bluetoothState],
+    ['Scanning (central)', info.scanning ? 'yes' : 'no'],
+    ['Advertising (peripheral)', info.advertising ? 'yes' : 'no'],
+    ['Nearby peers', String(info.nearby)],
+    ['Connected (peripheral)', String(info.connectedPeers)],
+  ];
+
+  return (
+    <Card muted>
+      <View style={{ gap: spacing.sm }}>
+        {rows.map(([k, v]) => (
+          <View key={k} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text variant="callout" color="textSecondary">
+              {k}
+            </Text>
+            <RNText style={{ fontFamily: 'Menlo', fontSize: 13, color: c.text }}>{v}</RNText>
+          </View>
+        ))}
+      </View>
+    </Card>
   );
 }
 
@@ -131,6 +167,10 @@ export default function SettingsScreen() {
               <PermissionItem key={info.key} info={info} imageSize={160} />
             ))}
           </View>
+        </Section>
+
+        <Section title="Bluetooth (debug)">
+          <BleDebug />
         </Section>
 
         <Section title="Event packs">

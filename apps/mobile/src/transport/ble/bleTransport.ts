@@ -2,10 +2,13 @@ import type { BleManager, Device, Subscription } from 'react-native-ble-plx';
 import { fromB64, toB64 } from '@/crypto/codec';
 import type { MeshEngine } from '@/mesh/engine';
 import { PeerSession } from '@/mesh/session/protocol';
-import type { SessionProgress, SessionResult, Transport } from '../types';
+import type { SessionProgress, SessionResult, Transport, TransportDebug } from '../types';
 import { DEFAULT_LINK_MTU, HHH_RX_CHAR_UUID, HHH_SERVICE_UUID, HHH_TX_CHAR_UUID, SESSION_BUDGET_MS } from './constants';
 import { FrameChannel, GattLink, runSessionOverLink } from './link';
 import { HhhBlePeripheral } from '../../../modules/hhh-ble-peripheral';
+
+/** CBManagerState rawValue → label, for the peripheral side's state events. */
+const CB_STATE = ['Unknown', 'Resetting', 'Unsupported', 'Unauthorized', 'PoweredOff', 'PoweredOn'];
 
 /**
  * Real BLE transport — dual role.
@@ -37,6 +40,7 @@ export class BleTransport implements Transport {
   private advertising = false;
   private peripheralSubs: Array<{ remove(): void }> = [];
   private readonly peripheralLinks = new Map<string, (chunk: Uint8Array) => void>();
+  private bleState = 'Unknown';
 
   configure(node: MeshEngine): void {
     this.node = node;
@@ -61,10 +65,50 @@ export class BleTransport implements Transport {
   private async ensureManager(): Promise<BleManager> {
     if (!this.manager) {
       // Dynamic import keeps the native module out of the Expo Go bundle.
+      // Constructing BleManager (CBCentralManager) triggers the iOS Bluetooth
+      // permission prompt on first use.
       const { BleManager: Manager } = await import('react-native-ble-plx');
       this.manager = new Manager();
+      this.manager.onStateChange((state) => {
+        this.bleState = String(state);
+      }, true);
     }
     return this.manager;
+  }
+
+  /** Prime the OS Bluetooth permission (instantiates CoreBluetooth so the iOS
+   *  prompt fires here, e.g. during onboarding, not later on the board).
+   *  Resolves once the state settles: false only if the user denied. */
+  async requestPermission(): Promise<boolean> {
+    const manager = await this.ensureManager();
+    return new Promise<boolean>((resolve) => {
+      let done = false;
+      const settle = (ok: boolean) => {
+        if (done) return;
+        done = true;
+        sub.remove();
+        resolve(ok);
+      };
+      const sub = manager.onStateChange((state) => {
+        const s = String(state);
+        this.bleState = s;
+        if (s === 'Unknown' || s === 'Resetting') return; // not yet determined
+        settle(s !== 'Unauthorized');
+      }, true);
+      // Don't hang onboarding if the state never settles.
+      setTimeout(() => settle(true), 6000);
+    });
+  }
+
+  debug(): TransportDebug {
+    return {
+      kind: 'ble',
+      bluetoothState: this.bleState,
+      scanning: this.scanning,
+      advertising: this.advertising,
+      nearby: this.nearby,
+      connectedPeers: this.peripheralLinks.size,
+    };
   }
 
   getNearby(): number {
@@ -112,6 +156,9 @@ export class BleTransport implements Transport {
       HhhBlePeripheral.addListener('onReceive', (e) => this.peripheralLinks.get(e.centralId)?.(fromB64(e.data))),
       HhhBlePeripheral.addListener('onCentralConnect', (e) => this.onCentralConnect(e.centralId)),
       HhhBlePeripheral.addListener('onCentralDisconnect', (e) => this.peripheralLinks.delete(e.centralId)),
+      HhhBlePeripheral.addListener('onStateChange', (e) => {
+        this.bleState = CB_STATE[e.state] ?? 'Unknown';
+      }),
     );
     HhhBlePeripheral.startAdvertising(HHH_SERVICE_UUID, HHH_RX_CHAR_UUID, HHH_TX_CHAR_UUID).catch(() => undefined);
   }
