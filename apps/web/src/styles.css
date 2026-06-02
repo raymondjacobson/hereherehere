@@ -21,6 +21,10 @@
   --card-bg: rgba(255, 255, 255, 0.72);
   --surface: rgba(255, 255, 255, 0.72); /* legacy alias */
 
+  /* Type: DynaPuff for expressive headlines, Quicksand for readable UI. */
+  --font-head: 'DynaPuff', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-body: 'Quicksand', system-ui, -apple-system, sans-serif;
+
   --pink: #ff7ab6;
   --blue: #7debff;
   --yellow: #ffef75;
@@ -39,9 +43,9 @@ html {
 }
 
 body {
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-body);
   color: var(--text);
-  line-height: 1.5;
+  line-height: 1.4;
   min-height: 100vh;
   background-color: var(--bg-bottom);
   background-image:
@@ -63,22 +67,25 @@ body {
 }
 
 .brand {
-  font-weight: 800;
+  font-weight: 700;
   font-size: 15px;
   letter-spacing: 0.02em;
   color: var(--text-secondary);
 }
 
 h1 {
-  font-weight: 800;
-  font-size: clamp(34px, 8vw, 48px);
-  line-height: 1.1;
-  letter-spacing: -0.02em;
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: clamp(32px, 7.4vw, 44px);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
   margin-top: 12px;
 }
 
 .lede {
   font-size: 19px;
+  font-weight: 500;
+  line-height: 1.4;
   color: var(--text-secondary);
   margin-top: 16px;
 }
@@ -159,13 +166,16 @@ h1 {
 }
 
 .card h2 {
-  font-size: 20px;
-  font-weight: 700;
+  font-family: var(--font-head);
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
 }
 
 .card p {
   color: var(--text-secondary);
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 .btn {
@@ -413,14 +423,18 @@ footer .built {
 }
 
 .scene h2 {
-  font-size: 24px;
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  margin-top: 4px;
+  font-family: var(--font-head);
+  font-size: 25px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.02;
+  margin-top: 6px;
 }
 
 .scene p {
   font-size: 17px;
+  font-weight: 500;
+  line-height: 1.45;
   color: var(--text-secondary);
   margin-top: 8px;
   max-width: 30em;
