@@ -100,10 +100,6 @@ export default function BoardScreen() {
 
   const board = useMemo(() => computeBoard(friends, latestByAuthor, now), [friends, latestByAuthor, now]);
 
-  // Empty state shows the edge-faded hero illustration; its vignette fades to
-  // flat cream, so drop the glow gradient here (it would box the artwork).
-  const isEmpty = board.primary.length === 0;
-
   const friendsById = useMemo(() => new Map(friends.map((f) => [f.id, f])), [friends]);
 
   const pullOpacity = scrollY.interpolate({ inputRange: [-PULL, -16, 0], outputRange: [1, 0.1, 0], extrapolate: 'clamp' });
@@ -163,7 +159,7 @@ export default function BoardScreen() {
     <View style={{ paddingTop: spacing.lg, gap: spacing.lg }}>
       {board.primary.length === 0 ? (
         <View style={{ alignItems: 'center', paddingTop: spacing.md }}>
-          <ImageHero source={require('../../assets/states/empty-board.png')} size={Math.min(width * 0.72, 300)} />
+          <ImageHero mask source={require('../../assets/states/empty-board.png')} size={Math.min(width * 0.72, 300)} />
         </View>
       ) : null}
 
@@ -218,7 +214,7 @@ export default function BoardScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
-      {isEmpty ? null : <Glow />}
+      <Glow />
       <FlatList<BoardEntry>
         data={board.primary}
         keyExtractor={(item) => item.friend.id}
