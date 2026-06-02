@@ -64,10 +64,13 @@ function render() {
   const payload = parsePayload();
   const store = $('store') as HTMLAnchorElement;
   const open = $('open') as HTMLAnchorElement;
+  const blob = $('blob') as HTMLElement;
   store.href = STORE_URL;
 
   if (!payload) {
-    ($('blob') as HTMLElement).textContent = '👋';
+    blob.classList.remove('motif');
+    blob.classList.add('pink');
+    blob.textContent = '👋';
     $('title').textContent = 'Friend links';
     $('lede').textContent =
       "When someone taps “Add me” in hereherehere, it creates a personal link. Open that link on your phone and it adds them as a friend. It looks like you’re here without one.";
@@ -77,6 +80,9 @@ function render() {
     return;
   }
 
+  blob.classList.remove('pink');
+  blob.classList.add('motif');
+  blob.innerHTML = '<img src="/handshake.png" alt="Two clay hands shaking" />';
   $('title').textContent = `${payload.n} wants to connect`;
   $('fingerprint').textContent = fingerprint(payload.s);
   $('lede').textContent = 'Open hereherehere to add them. They’ll need to add you too.';

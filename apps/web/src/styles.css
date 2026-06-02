@@ -130,6 +130,21 @@ h1 {
 .blob.blue { background: var(--blue); }
 .blob.yellow { background: var(--yellow); }
 
+/* Clay handshake motif (friend "wants to connect" state) — no circle. */
+.blob.motif {
+  background: none;
+  width: auto;
+  height: auto;
+  margin: 4px 0 20px;
+  filter: drop-shadow(0 10px 22px rgba(255, 122, 190, 0.28));
+}
+
+.blob.motif img {
+  width: 160px;
+  height: auto;
+  display: block;
+}
+
 .card {
   background: var(--card-bg);
   -webkit-backdrop-filter: blur(12px);
