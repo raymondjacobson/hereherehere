@@ -1,16 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, FlatList, type ImageSourcePropType, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
-import { BlurView } from 'expo-blur';
+import { Animated, Easing, FlatList, type ImageSourcePropType, Pressable, useWindowDimensions, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/Text';
-import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { Avatar } from '@/components/Avatar';
 import { HereCard } from '@/components/HereCard';
 import { ImageHero } from '@/components/ImageHero';
 import { MotifButton } from '@/components/MotifButton';
+import { GlassButton } from '@/components/GlassButton';
 import { Grain } from '@/components/Grain';
 import { radius, spacing } from '@/theme/theme';
 import { useTheme } from '@/theme/useTheme';
@@ -296,7 +295,7 @@ export default function BoardScreen() {
         showsVerticalScrollIndicator={false}
       />
 
-      {/* Bottom actions — frosted glass tray; the board scrolls underneath it */}
+      {/* Floating glass action buttons — the board scrolls behind them */}
       <View
         style={{
           position: 'absolute',
@@ -304,25 +303,25 @@ export default function BoardScreen() {
           right: 0,
           bottom: 0,
           paddingHorizontal: spacing.xl,
-          paddingTop: spacing.lg,
           paddingBottom: insets.bottom + spacing.md,
+          flexDirection: 'row',
           gap: spacing.sm,
-          overflow: 'hidden',
         }}>
-        <BlurView
-          intensity={Platform.OS === 'ios' ? 80 : 24}
-          tint="light"
-          experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
-          style={StyleSheet.absoluteFill}
-        />
-        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: c.border }} />
-        <Button
+        <GlassButton
           title={refresh.active ? `Refreshing… ${refresh.remaining}s` : 'Refresh Crowd'}
-          variant="glass"
+          tint="neutral"
+          big
           disabled={refresh.active}
           onPress={refresh.start}
+          style={{ flex: 1 }}
         />
-        <Button title="Post Message" big onPress={() => router.push('/compose')} />
+        <GlassButton
+          title="Post Message"
+          tint="accent"
+          big
+          onPress={() => router.push('/compose')}
+          style={{ flex: 1 }}
+        />
       </View>
     </View>
   );
