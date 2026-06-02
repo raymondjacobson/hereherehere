@@ -12,7 +12,8 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSBluetoothAlwaysUsageDescription": "hereherehere uses Bluetooth to pass messages between nearby phones when there’s no signal. It never tracks your location.",
-        "NSBluetoothPeripheralUsageDescription": "hereherehere uses Bluetooth to pass messages between nearby phones when there’s no signal. It never tracks your location."
+        "NSBluetoothPeripheralUsageDescription": "hereherehere uses Bluetooth to pass messages between nearby phones when there’s no signal. It never tracks your location.",
+        "UIBackgroundModes": ["bluetooth-central", "bluetooth-peripheral"]
       }
     },
     "android": {

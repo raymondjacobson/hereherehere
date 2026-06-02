@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useStore } from '@/state/store';
-import { mockTransport, SESSION_MS } from '@/transport/mock';
+import { SESSION_MS } from '@/transport/mock';
+import { transport } from '@/transport';
 import type { SessionPhase } from '@/transport/types';
 
 /** How long the "N new" result lingers before the pill returns to idle. */
@@ -77,9 +78,9 @@ export function useCrowdRefresh(): CrowdRefreshState {
       }
       setNewCount(seen.size);
     };
-    unsubRef.current = mockTransport.onUpdate(recount);
+    unsubRef.current = transport.onUpdate(recount);
 
-    mockTransport
+    transport
       .runSession(SESSION_MS, (p) => {
         setPhase(p.phase);
         setFraction(p.fraction);
@@ -103,7 +104,7 @@ export function useCrowdRefresh(): CrowdRefreshState {
       mountedRef.current = false;
       unsubRef.current?.();
       if (lingerRef.current) clearTimeout(lingerRef.current);
-      if (runningRef.current) mockTransport.stopSession();
+      if (runningRef.current) transport.stopSession();
     };
   }, []);
 

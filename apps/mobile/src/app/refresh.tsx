@@ -9,7 +9,8 @@ import { Card } from '@/components/Card';
 import { spacing } from '@/theme/theme';
 import { useTheme } from '@/theme/useTheme';
 import { useStore } from '@/state/store';
-import { mockTransport, SESSION_MS } from '@/transport/mock';
+import { SESSION_MS } from '@/transport/mock';
+import { transport } from '@/transport';
 import type { SessionPhase } from '@/transport/types';
 import { motifs } from '@/assets/motifs';
 
@@ -64,7 +65,7 @@ export default function RefreshScreen() {
     return () => {
       cancelled = true;
       loop.stop();
-      mockTransport.stopSession();
+      transport.stopSession();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

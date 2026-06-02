@@ -5,20 +5,22 @@ import { PeerSession } from '@/mesh/session/protocol';
 import type { SessionProgress, SessionResult, Transport } from '../types';
 import { DEFAULT_LINK_MTU, HHH_RX_CHAR_UUID, HHH_SERVICE_UUID, HHH_TX_CHAR_UUID, SESSION_BUDGET_MS } from './constants';
 import { FrameChannel, GattLink, runSessionOverLink } from './link';
+import { HhhBlePeripheral } from '../../../modules/hhh-ble-peripheral';
 
 /**
- * Real BLE transport — DORMANT until an Expo dev client exists.
+ * Real BLE transport — dual role.
  *
- * It is never imported by the app bundle, and `react-native-ble-plx` is loaded
- * via a dynamic import inside runSession, so merely shipping this file does NOT
- * pull the native module into Expo Go. Activating it requires a dev client
- * (prebuild + @config-plugins/react-native-ble-plx + EAS/local build).
+ * As a **central** it scans for and connects to peers advertising our service
+ * (`react-native-ble-plx`, loaded via dynamic import so the native module never
+ * enters the Expo Go bundle). As a **peripheral** it advertises the service and
+ * serves the RX/TX characteristics via the `hhh-ble-peripheral` native module
+ * (CoreBluetooth, which `react-native-ble-plx` can't do). Both roles run at
+ * once: two phones each scan and advertise, so whoever discovers whom, a session
+ * runs. The mesh layer is anti-entropy with dedupe, so a redundant session
+ * between the same pair is harmless — no connection arbitration needed.
  *
- * v1 is central-role only (scan + connect): react-native-ble-plx has no GATT
- * server / advertising API, so the peripheral half (advertising the service +
- * serving characteristics) needs a separate native module. The frame protocol
- * is symmetric, so a peripheral implementation drops in behind the same
- * GattLink without touching the mesh layer.
+ * Requires a native build (dev client / EAS / local). In Expo Go the peripheral
+ * module is absent and the transport selector falls back to the simulator.
  */
 export class BleTransport implements Transport {
   private node: MeshEngine | null = null;
@@ -29,6 +31,12 @@ export class BleTransport implements Transport {
   private readonly nearbyHandlers = new Set<(n: number) => void>();
   private readonly updateHandlers = new Set<() => void>();
   private readonly seenPeers = new Set<string>();
+
+  // Peripheral role: advertising state, native event subscriptions, and one
+  // inbound-chunk dispatcher per connected central.
+  private advertising = false;
+  private peripheralSubs: Array<{ remove(): void }> = [];
+  private readonly peripheralLinks = new Map<string, (chunk: Uint8Array) => void>();
 
   configure(node: MeshEngine): void {
     this.node = node;
@@ -76,6 +84,7 @@ export class BleTransport implements Transport {
   }
 
   async startAmbient(): Promise<void> {
+    this.startPeripheral();
     if (this.scanning) return;
     const manager = await this.ensureManager();
     this.scanning = true;
@@ -88,9 +97,56 @@ export class BleTransport implements Transport {
   }
 
   stopAmbient(): void {
+    this.stopPeripheral();
     if (!this.scanning) return;
     this.manager?.stopDeviceScan();
     this.scanning = false;
+  }
+
+  // --- Peripheral role (advertise + serve), via the native CoreBluetooth module ---
+
+  private startPeripheral(): void {
+    if (this.advertising || !HhhBlePeripheral) return;
+    this.advertising = true;
+    this.peripheralSubs.push(
+      HhhBlePeripheral.addListener('onReceive', (e) => this.peripheralLinks.get(e.centralId)?.(fromB64(e.data))),
+      HhhBlePeripheral.addListener('onCentralConnect', (e) => this.onCentralConnect(e.centralId)),
+      HhhBlePeripheral.addListener('onCentralDisconnect', (e) => this.peripheralLinks.delete(e.centralId)),
+    );
+    HhhBlePeripheral.startAdvertising(HHH_SERVICE_UUID, HHH_RX_CHAR_UUID, HHH_TX_CHAR_UUID).catch(() => undefined);
+  }
+
+  private stopPeripheral(): void {
+    if (!this.advertising) return;
+    this.advertising = false;
+    HhhBlePeripheral?.stopAdvertising();
+    this.peripheralSubs.forEach((s) => s.remove());
+    this.peripheralSubs = [];
+    this.peripheralLinks.clear();
+  }
+
+  /** A central subscribed to our TX characteristic — run a responder session
+   *  over a link backed by native notify (out) and RX writes (in). */
+  private onCentralConnect(centralId: string): void {
+    const node = this.node;
+    if (!node || !HhhBlePeripheral || this.peripheralLinks.has(centralId)) return;
+    const peripheral = HhhBlePeripheral;
+    let onChunk: ((chunk: Uint8Array) => void) | undefined;
+    const link: GattLink = {
+      write: async (bytes) => {
+        await peripheral.notify(centralId, toB64(bytes));
+      },
+      subscribe: (cb) => {
+        onChunk = cb;
+      },
+      close: () => this.peripheralLinks.delete(centralId),
+    };
+    const channel = new FrameChannel(link, DEFAULT_LINK_MTU);
+    this.peripheralLinks.set(centralId, (chunk) => onChunk?.(chunk));
+    runSessionOverLink(new PeerSession(node), channel, Date.now(), { timeoutMs: SESSION_BUDGET_MS })
+      .then(() => this.notifyUpdate())
+      .catch(() => undefined)
+      .finally(() => this.peripheralLinks.delete(centralId));
   }
 
   stopSession(): void {
@@ -190,3 +246,7 @@ export class BleTransport implements Transport {
     }
   }
 }
+
+/** Process-wide BLE transport (real Bluetooth). Used in native builds; in Expo
+ *  Go the selector falls back to the simulator. */
+export const bleTransport = new BleTransport();

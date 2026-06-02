@@ -7,6 +7,7 @@ import type { MeshEngine } from '@/mesh/engine';
 import { isNewer } from '@/mesh/resolve/latestStatus';
 import type { EventPack, Friend, FriendCodePayload, Here, LocalIdentity } from '@/domain/types';
 import { mockTransport } from '@/transport/mock';
+import { transport, isSimulatedTransport } from '@/transport';
 import { generatePeers, loadPeers, savePeers, clearPeers } from '@/transport/syntheticPeers';
 import { clearEngine, createEngine, getEngine } from './engine';
 import { loadSecrets, storeSecrets, clearSecrets } from './secrets';
@@ -103,8 +104,8 @@ export const useStore = create<AppState>()(
           // Re-seed our own latest status so the mesh keeps sharing it after a relaunch.
           const own = get().heres[id.signPk];
           if (own) engine.postHere(own, Date.now());
-          mockTransport.configure(engine);
-          mockTransport.setPeers(peers, engine.asFriend());
+          transport.configure(engine);
+          if (isSimulatedTransport) mockTransport.setPeers(peers, engine.asFriend());
         }
       },
 
@@ -121,7 +122,7 @@ export const useStore = create<AppState>()(
           createdAt: Date.now(),
         };
         const engine = createEngine({ ...identity, signSk: keys.signSk, boxSk: keys.boxSk }, []);
-        mockTransport.configure(engine);
+        transport.configure(engine);
         set({ identity });
       },
 
@@ -199,7 +200,7 @@ export const useStore = create<AppState>()(
       },
 
       crowdRefresh: async (durationMs, onProgress) => {
-        const result = await mockTransport.runSession(durationMs, onProgress);
+        const result = await transport.runSession(durationMs, onProgress);
         const engine = getEngine();
         if (engine) set({ heres: mergeHeres(get().heres, engine) });
 
@@ -245,7 +246,7 @@ export const useStore = create<AppState>()(
         set({ friends });
         const engine = getEngine();
         engine?.setFriends(friends);
-        if (engine) mockTransport.setPeers(peers, engine.asFriend());
+        if (engine && isSimulatedTransport) mockTransport.setPeers(peers, engine.asFriend());
       },
 
       resetAll: async () => {

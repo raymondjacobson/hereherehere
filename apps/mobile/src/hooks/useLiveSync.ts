@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useStore } from '@/state/store';
-import { mockTransport } from '@/transport/mock';
+import { transport } from '@/transport';
 
 /**
  * Keeps the board live while mounted: starts ambient discovery, pulls the
@@ -11,19 +11,19 @@ import { mockTransport } from '@/transport/mock';
  */
 export function useLiveSync() {
   const syncFromEngine = useStore((s) => s.syncFromEngine);
-  const [nearby, setNearby] = useState(() => mockTransport.getNearby());
+  const [nearby, setNearby] = useState(() => transport.getNearby());
 
   useEffect(() => {
-    mockTransport.startAmbient();
-    const offNearby = mockTransport.onNearby(setNearby);
-    const offUpdate = mockTransport.onUpdate(syncFromEngine);
+    transport.startAmbient();
+    const offNearby = transport.onNearby(setNearby);
+    const offUpdate = transport.onUpdate(syncFromEngine);
     return () => {
       offNearby();
       offUpdate();
-      mockTransport.stopAmbient();
+      transport.stopAmbient();
     };
   }, [syncFromEngine]);
 
-  const boost = useCallback(() => mockTransport.boost(), []);
+  const boost = useCallback(() => transport.boost(), []);
   return { nearby, boost };
 }
