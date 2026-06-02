@@ -8,6 +8,7 @@
     "scheme": "hereherehere",
     "userInterfaceStyle": "light",
     "ios": {
+      "bundleIdentifier": "app.hereherehere",
       "supportsTablet": true,
       "infoPlist": {
         "NSBluetoothAlwaysUsageDescription": "hereherehere uses Bluetooth to pass messages between nearby phones when there’s no signal. It never tracks your location.",
@@ -15,6 +16,7 @@
       }
     },
     "android": {
+      "package": "app.hereherehere",
       "adaptiveIcon": {
         "backgroundColor": "#EDC6C9",
         "foregroundImage": "./assets/images/android-icon-foreground.png"
