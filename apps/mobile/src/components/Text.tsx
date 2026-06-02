@@ -1,6 +1,9 @@
 import { Text as RNText, type TextProps as RNTextProps, type TextStyle } from 'react-native';
-import { fontFamily, type, type Palette } from '@/theme/theme';
+import { displayFamily, fontFamily, type, type Palette } from '@/theme/theme';
 import { useTheme } from '@/theme/useTheme';
+
+// Big headers + the wordmark get the display face; everything else stays sans.
+const DISPLAY_VARIANTS = new Set(['hero', 'title']);
 
 type Variant = keyof typeof type;
 type Weight = keyof typeof fontFamily;
@@ -25,9 +28,10 @@ export function Text({
   ...rest
 }: TextProps) {
   const { c } = useTheme();
+  const family = DISPLAY_VARIANTS.has(variant) ? displayFamily[weight] : fontFamily[weight];
   const base: TextStyle = {
     ...type[variant],
-    fontFamily: fontFamily[weight],
+    fontFamily: family,
     color: c[color],
     ...(center ? { textAlign: 'center' } : null),
   };

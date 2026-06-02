@@ -14,6 +14,11 @@ import {
   PlusJakartaSans_700Bold,
   PlusJakartaSans_800ExtraBold,
 } from '@expo-google-fonts/plus-jakarta-sans';
+import {
+  BricolageGrotesque_500Medium,
+  BricolageGrotesque_700Bold,
+  BricolageGrotesque_800ExtraBold,
+} from '@expo-google-fonts/bricolage-grotesque';
 import { palettes } from '@/theme/theme';
 import { useScheme } from '@/theme/useTheme';
 import { useStore } from '@/state/store';
@@ -45,6 +50,9 @@ export default function RootLayout() {
     Jakarta_600SemiBold: PlusJakartaSans_600SemiBold,
     Jakarta_700Bold: PlusJakartaSans_700Bold,
     Jakarta_800ExtraBold: PlusJakartaSans_800ExtraBold,
+    Bricolage_500Medium: BricolageGrotesque_500Medium,
+    Bricolage_700Bold: BricolageGrotesque_700Bold,
+    Bricolage_800ExtraBold: BricolageGrotesque_800ExtraBold,
   });
 
   const ready = hydrated && fontsLoaded;

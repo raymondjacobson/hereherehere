@@ -99,12 +99,22 @@ export const radius = {
 } as const;
 
 export const fontFamily = {
-  // Plus Jakarta Sans — modern, friendly, not Inter. Good numerals.
+  // Plus Jakarta Sans — body/UI text.
   regular: 'Jakarta_400Regular',
   medium: 'Jakarta_500Medium',
   semibold: 'Jakarta_600SemiBold',
   bold: 'Jakarta_700Bold',
   extrabold: 'Jakarta_800ExtraBold',
+} as const;
+
+// Bricolage Grotesque — characterful display face for big headers + the
+// wordmark, so the chrome has a voice that matches the handmade artwork.
+export const displayFamily = {
+  regular: 'Bricolage_500Medium',
+  medium: 'Bricolage_500Medium',
+  semibold: 'Bricolage_700Bold',
+  bold: 'Bricolage_700Bold',
+  extrabold: 'Bricolage_800ExtraBold',
 } as const;
 
 export const type = {

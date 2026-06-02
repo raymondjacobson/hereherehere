@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { spacing } from '@/theme/theme';
 import { useTheme } from '@/theme/useTheme';
+import { Grain } from './Grain';
 
 type Props = {
   children: ReactNode;
@@ -29,18 +30,22 @@ export function Screen({ children, scroll, padded = true, contentStyle, edges }:
     flexGrow: 1,
   };
 
-  if (scroll) {
-    return (
-      <ScrollView
-        style={[styles.fill, { backgroundColor: c.bg }]}
-        contentContainerStyle={[inner, contentStyle]}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}>
-        {children}
-      </ScrollView>
-    );
-  }
-  return <View style={[styles.fill, { backgroundColor: c.bg }, inner, contentStyle]}>{children}</View>;
+  return (
+    <View style={[styles.fill, { backgroundColor: c.bg }]}>
+      <Grain />
+      {scroll ? (
+        <ScrollView
+          style={styles.fill}
+          contentContainerStyle={[inner, contentStyle]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
+          {children}
+        </ScrollView>
+      ) : (
+        <View style={[styles.fill, inner, contentStyle]}>{children}</View>
+      )}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({ fill: { flex: 1 } });
