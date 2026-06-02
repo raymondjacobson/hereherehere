@@ -338,14 +338,16 @@ footer {
   margin-top: 16px;
 }
 
-.btn.donate {
+.btn.donate,
+#open.btn {
   background: linear-gradient(135deg, #ff7ab6 0%, #f39ac3 100%);
   color: #171313;
   box-shadow: 0 8px 26px rgba(255, 122, 190, 0.32);
   transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
-.btn.donate:hover {
+.btn.donate:hover,
+#open.btn:hover {
   opacity: 1;
   transform: translateY(-1px);
   box-shadow: 0 12px 32px rgba(255, 122, 190, 0.45);
