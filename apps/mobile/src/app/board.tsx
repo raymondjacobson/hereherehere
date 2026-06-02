@@ -117,8 +117,8 @@ export default function BoardScreen() {
           <StatusPill nearby={nearby} />
         </View>
         <View style={{ flexDirection: 'row', gap: spacing.md }}>
-          <MotifButton motif={motifs.connect} accessibilityLabel="Friend code" onPress={() => router.push('/friends/code')} />
-          <MotifButton motif={motifs.settings} accessibilityLabel="Settings" onPress={() => router.push('/settings')} />
+          <MotifButton glass motif={motifs.connect} accessibilityLabel="Friend code" onPress={() => router.push('/friends/code')} />
+          <MotifButton glass motif={motifs.settings} accessibilityLabel="Settings" onPress={() => router.push('/settings')} />
         </View>
       </View>
 
