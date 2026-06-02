@@ -10,6 +10,7 @@ import { HereCard } from '@/components/HereCard';
 import { ImageHero } from '@/components/ImageHero';
 import { MotifButton } from '@/components/MotifButton';
 import { Grain } from '@/components/Grain';
+import { Glow } from '@/components/Glow';
 import { radius, spacing } from '@/theme/theme';
 import { useTheme } from '@/theme/useTheme';
 import { useNow } from '@/hooks/useNow';
@@ -214,6 +215,7 @@ export default function BoardScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
+      <Glow />
       <Grain />
       <FlatList<BoardEntry>
         data={board.primary}
