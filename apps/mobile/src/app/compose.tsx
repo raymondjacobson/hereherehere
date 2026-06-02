@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { type ImageSourcePropType, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
@@ -17,7 +17,9 @@ import { buildSuggestions, filterSuggestions } from '@/domain/autocomplete';
 import { clockTime, DAY, HOUR, MIN } from '@/util/time';
 import { motifs } from '@/assets/motifs';
 
-const STEP = 10 * MIN;
+const STEP = 5 * MIN; // fine-tune step for the −/+ buttons
+const MIN_DURATION = 5 * MIN;
+const DURATIONS = [10, 20, 30, 45, 60]; // minutes, for the "For" pills
 type PickerTarget = 'start' | 'end' | null;
 
 export default function ComposeScreen() {
@@ -40,26 +42,31 @@ export default function ComposeScreen() {
   const suggestions = useMemo(() => filterSuggestions(allSuggestions, whereText), [allSuggestions, whereText]);
 
   const now = Date.now();
-  const effStart = Math.max(startsAt, now); // start never before now
   const isNow = startsAt <= now + MIN;
-  const startLabel = isNow ? 'Now' : clockTime(effStart);
+  const durationMin = Math.max(0, Math.round((endsAt - startsAt) / MIN));
+  const startLabel = isNow ? 'now' : clockTime(startsAt);
   const endLabel = clockTime(endsAt);
   const canPost = whereText.trim().length > 0;
 
+  // Stepping Start moves the whole window (End follows, duration kept).
   function adjustStart(deltaMs: number) {
-    const base = Math.max(startsAt, Date.now());
-    const n = Math.max(Date.now(), base + deltaMs);
+    const dur = endsAt - startsAt;
+    const n = Math.max(Date.now(), startsAt + deltaMs);
     setStartsAt(n);
-    setEndsAt((e) => Math.max(e, n + STEP));
+    setEndsAt(n + dur);
   }
+  // Stepping End changes the duration (Start fixed).
   function adjustEnd(deltaMs: number) {
-    const es = Math.max(startsAt, Date.now());
-    setEndsAt((prev) => Math.max(es + STEP, prev + deltaMs));
+    setEndsAt((prev) => Math.max(startsAt + MIN_DURATION, prev + deltaMs));
+  }
+  // A "For" pill sets the duration; End updates.
+  function setDuration(min: number) {
+    setEndsAt(startsAt + min * MIN);
   }
 
   function pickSuggestion(label: string, setEnd?: number) {
     setWhereText(label);
-    if (setEnd && setEnd > effStart) setEndsAt(setEnd);
+    if (setEnd && setEnd > startsAt) setEndsAt(setEnd);
   }
 
   function onPickerChange(event: DateTimePickerEvent, date?: Date) {
@@ -67,13 +74,14 @@ export default function ComposeScreen() {
     if (!date || event.type === 'dismissed') return;
     const t = date.getTime();
     if (pickerFor === 'start') {
+      const dur = endsAt - startsAt;
       const n = Math.max(Date.now(), t);
       setStartsAt(n);
-      setEndsAt((e) => Math.max(e, n + STEP));
+      setEndsAt(n + dur);
     } else if (pickerFor === 'end') {
       let n = t;
-      if (n <= effStart) n += DAY; // crossed midnight
-      setEndsAt(Math.max(effStart + STEP, n));
+      if (n <= startsAt) n += DAY; // crossed midnight
+      setEndsAt(Math.max(startsAt + MIN_DURATION, n));
     }
   }
 
@@ -110,26 +118,13 @@ export default function ComposeScreen() {
     );
   }
 
-  const pickerValue = pickerFor === 'end' ? new Date(endsAt) : new Date(effStart);
+  const pickerValue = pickerFor === 'end' ? new Date(endsAt) : new Date(Math.max(startsAt, now));
 
   return (
-    <View style={{ flex: 1, backgroundColor: c.bg, paddingTop: insets.top + spacing.md }}>
-      {/* Top bar */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.xl }}>
-        <Pressable onPress={() => router.back()} hitSlop={12} style={{ width: 60 }}>
-          <Text variant="body" weight="semibold" color="textSecondary">
-            Cancel
-          </Text>
-        </Pressable>
-        <Text variant="body" weight="bold">
-          New message
-        </Text>
-        <View style={{ width: 60 }} />
-      </View>
-
+    <View style={{ flex: 1, backgroundColor: c.bg }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
-          contentContainerStyle={{ padding: spacing.xl, gap: spacing.xl }}
+          contentContainerStyle={{ paddingTop: insets.top + spacing.xl, padding: spacing.xl, gap: spacing.xl }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}>
           {/* WHERE */}
@@ -145,6 +140,7 @@ export default function ComposeScreen() {
               onBlur={() => setWhereFocused(false)}
               placeholder="a stage, a landmark, anywhere"
               returnKeyType="done"
+              autoFocus
             />
             {whereFocused && suggestions.length > 0 ? (
               <ScrollView
@@ -160,30 +156,45 @@ export default function ComposeScreen() {
           </View>
 
           {/* WHEN */}
-          <View style={{ gap: spacing.md }}>
-            <Text variant="meta" weight="bold" color="textSecondary">
-              WHEN
-            </Text>
-            <Card>
-              <TimeRow
-                label="Start"
-                value={startLabel}
-                onPressValue={() => setPickerFor('start')}
-                onMinus={() => adjustStart(-STEP)}
-                onPlus={() => adjustStart(STEP)}
-                minusDisabled={isNow}
-              />
-              <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: c.border, marginVertical: spacing.lg }} />
-              <TimeRow
-                label="End"
-                value={endLabel}
-                onPressValue={() => setPickerFor('end')}
-                onMinus={() => adjustEnd(-STEP)}
-                onPlus={() => adjustEnd(STEP)}
-                minusDisabled={endsAt <= effStart + STEP}
-              />
-            </Card>
-          </View>
+          <Card>
+            <TimeRow
+              label="Start"
+              value={startLabel}
+              onPressValue={() => setPickerFor('start')}
+              onMinus={() => adjustStart(-STEP)}
+              onPlus={() => adjustStart(STEP)}
+              minusDisabled={isNow}
+            />
+
+            <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: c.border, marginVertical: spacing.lg }} />
+
+            <View style={{ gap: spacing.md }}>
+              <Text variant="callout" weight="semibold" color="textSecondary">
+                For
+              </Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+                {DURATIONS.map((m) => (
+                  <Chip
+                    key={m}
+                    label={m === 60 ? '1h' : `${m}m`}
+                    selected={durationMin === m}
+                    onPress={() => setDuration(m)}
+                  />
+                ))}
+              </View>
+            </View>
+
+            <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: c.border, marginVertical: spacing.lg }} />
+
+            <TimeRow
+              label="End"
+              value={endLabel}
+              onPressValue={() => setPickerFor('end')}
+              onMinus={() => adjustEnd(-STEP)}
+              onPlus={() => adjustEnd(STEP)}
+              minusDisabled={endsAt - startsAt <= MIN_DURATION}
+            />
+          </Card>
 
           {/* NOTE */}
           <View style={{ gap: spacing.md }}>
@@ -228,7 +239,7 @@ export default function ComposeScreen() {
   );
 }
 
-function StepButton({ symbol, onPress, disabled }: { symbol: string; onPress: () => void; disabled?: boolean }) {
+function StepButton({ motif, onPress, disabled }: { motif: ImageSourcePropType; onPress: () => void; disabled?: boolean }) {
   const { c } = useTheme();
   return (
     <Pressable
@@ -242,14 +253,11 @@ function StepButton({ symbol, onPress, disabled }: { symbol: string; onPress: ()
         height: 40,
         borderRadius: 20,
         backgroundColor: c.surfaceAlt,
-        borderWidth: 1,
-        borderColor: c.border,
+        alignItems: 'center',
+        justifyContent: 'center',
         opacity: disabled ? 0.35 : pressed ? 0.7 : 1,
       })}>
-      {/* lineHeight === height vertically centers the glyph; textAlign centers horizontally */}
-      <Text weight="bold" style={{ width: 40, height: 40, fontSize: 22, lineHeight: 40, textAlign: 'center', color: c.text }}>
-        {symbol}
-      </Text>
+      <Image source={motif} style={{ width: 20, height: 20 }} contentFit="contain" />
     </Pressable>
   );
 }
@@ -272,7 +280,7 @@ function TimeRow({
   const { c } = useTheme();
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-      <Text variant="callout" weight="semibold" color="textSecondary" style={{ width: 44 }}>
+      <Text variant="callout" weight="semibold" color="textSecondary" style={{ width: 40 }}>
         {label}
       </Text>
       <Pressable onPress={onPressValue} hitSlop={8} style={{ flex: 1 }}>
@@ -280,8 +288,8 @@ function TimeRow({
           {value}
         </Text>
       </Pressable>
-      <StepButton symbol="−" onPress={onMinus} disabled={minusDisabled} />
-      <StepButton symbol="+" onPress={onPlus} />
+      <StepButton motif={motifs.minus} onPress={onMinus} disabled={minusDisabled} />
+      <StepButton motif={motifs.plus} onPress={onPlus} />
     </View>
   );
 }
