@@ -68,9 +68,9 @@ function render() {
   store.href = STORE_URL;
 
   if (!payload) {
-    blob.classList.remove('motif');
-    blob.classList.add('pink');
-    blob.textContent = '👋';
+    blob.classList.remove('pink');
+    blob.classList.add('motif');
+    blob.innerHTML = '<img src="/connect.png" alt="Scanning a friend code to connect" />';
     $('title').textContent = 'Friend links';
     $('lede').textContent =
       "When someone taps “Add me” in hereherehere, it creates a personal link. Open that link on your phone and it adds them as a friend. It looks like you’re here without one.";
