@@ -98,8 +98,8 @@ h1 {
   /* Keep the scene's solid backdrop, but feather the rectangular edges so the
      image melts into the page and the glow bleeds around it (vignette).
      The gradient is sized so the fade lands inside the image, not outside it. */
-  -webkit-mask-image: radial-gradient(ellipse 82% 82% at 50% 47%, #000 40%, transparent 74%);
-  mask-image: radial-gradient(ellipse 82% 82% at 50% 47%, #000 40%, transparent 74%);
+  -webkit-mask-image: radial-gradient(ellipse closest-side at 50% 50%, #000 42%, transparent 99%);
+  mask-image: radial-gradient(ellipse closest-side at 50% 50%, #000 42%, transparent 99%);
 }
 
 /* Soft pink/cyan/yellow light glowing around the vignetted clay scene. */
