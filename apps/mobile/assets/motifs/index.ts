@@ -25,7 +25,9 @@ export const motifs = {
   notification: require('./notification.png'),
   oldMessage: require('./old_message.png'),
   pathfind: require('./pathfind.png'),
+  post: require('./post.png'),
   qr: require('./qr.png'),
+  refresh: require('./refresh.png'),
   settings: require('./settings.png'),
 } satisfies Record<string, ImageSourcePropType>;
 

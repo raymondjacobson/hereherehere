@@ -9,7 +9,6 @@ import { Avatar } from '@/components/Avatar';
 import { HereCard } from '@/components/HereCard';
 import { ImageHero } from '@/components/ImageHero';
 import { MotifButton } from '@/components/MotifButton';
-import { GlassButton } from '@/components/GlassButton';
 import { Grain } from '@/components/Grain';
 import { radius, spacing } from '@/theme/theme';
 import { useTheme } from '@/theme/useTheme';
@@ -295,32 +294,30 @@ export default function BoardScreen() {
         showsVerticalScrollIndicator={false}
       />
 
-      {/* Floating glass action buttons — the board scrolls behind them */}
+      {/* Floating motif action tokens (match the top nav), over the board */}
       <View
         style={{
           position: 'absolute',
           left: 0,
           right: 0,
-          bottom: 0,
-          paddingHorizontal: spacing.xl,
-          paddingBottom: insets.bottom + spacing.md,
+          bottom: insets.bottom + spacing.md,
           flexDirection: 'row',
-          gap: spacing.sm,
+          justifyContent: 'center',
+          gap: spacing.xl,
         }}>
-        <GlassButton
-          title={refresh.active ? `Refreshing… ${refresh.remaining}s` : 'Refresh Crowd'}
-          tint="neutral"
-          big
+        <MotifButton
+          motif={motifs.refresh}
+          size={64}
+          accessibilityLabel="Refresh the crowd"
+          overlay={refresh.active ? String(refresh.remaining) : undefined}
           disabled={refresh.active}
           onPress={refresh.start}
-          style={{ flex: 1 }}
         />
-        <GlassButton
-          title="Post Message"
-          tint="accent"
-          big
+        <MotifButton
+          motif={motifs.post}
+          size={64}
+          accessibilityLabel="Post a message"
           onPress={() => router.push('/compose')}
-          style={{ flex: 1 }}
         />
       </View>
     </View>
