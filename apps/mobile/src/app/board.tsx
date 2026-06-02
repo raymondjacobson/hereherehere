@@ -25,21 +25,8 @@ function StatusPill({ nearby }: { nearby: number }) {
   const { c } = useTheme();
   const active = nearby > 0;
   return (
-    <View
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.sm,
-        alignSelf: 'flex-start',
-        marginTop: spacing.sm,
-        paddingVertical: 6,
-        paddingHorizontal: spacing.md,
-        borderRadius: radius.pill,
-        backgroundColor: c.surfaceAlt,
-        borderWidth: 1,
-        borderColor: c.border,
-      }}>
-      <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: active ? c.success : c.textTertiary }} />
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.sm }}>
+      <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: active ? c.success : c.textTertiary }} />
       <Text variant="meta" weight="semibold" color={active ? 'text' : 'textSecondary'}>
         {active ? `${nearby} nearby` : 'Looking nearby…'}
       </Text>
