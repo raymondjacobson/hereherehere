@@ -22,11 +22,12 @@ export type CrowdRefreshState = {
 
 /**
  * Drives an ambient crowd-refresh: the same mesh session as the full-screen
- * ceremony, but run in place while the user keeps using the board. Packets are
- * ingested live as peers are discovered, so cards update mid-session.
+ * ceremony, but run in place while the user keeps using the board. The engine
+ * syncs peers live as they're discovered and signals via onUpdate, so cards
+ * update mid-session.
  */
 export function useCrowdRefresh(): CrowdRefreshState {
-  const ingestPackets = useStore((s) => s.ingestPackets);
+  const syncFromEngine = useStore((s) => s.syncFromEngine);
   const friends = useStore((s) => s.friends);
 
   const [active, setActive] = useState(false);
@@ -61,13 +62,22 @@ export function useCrowdRefresh(): CrowdRefreshState {
     setNewCount(0);
 
     const friendIds = new Set(friendsRef.current.map((f) => f.id));
-    unsubRef.current = mockTransport.onInbound((packets) => {
-      const opened = ingestPackets(packets);
-      for (const here of opened) {
-        if (friendIds.has(here.authorId)) seen.add(here.authorId);
+    // Snapshot friend sequences so we can count which friends got something newer.
+    const before = new Map<string, number>();
+    const startHeres = useStore.getState().heres;
+    for (const fid of friendIds) before.set(fid, startHeres[fid]?.sequence ?? -1);
+
+    // On each engine update: pull new statuses into the board, then recount.
+    const recount = () => {
+      syncFromEngine();
+      const heres = useStore.getState().heres;
+      for (const fid of friendIds) {
+        const h = heres[fid];
+        if (h && h.sequence > (before.get(fid) ?? -1)) seen.add(fid);
       }
       setNewCount(seen.size);
-    });
+    };
+    unsubRef.current = mockTransport.onUpdate(recount);
 
     mockTransport
       .runSession(SESSION_MS, (p) => {
@@ -75,6 +85,7 @@ export function useCrowdRefresh(): CrowdRefreshState {
         setFraction(p.fraction);
       })
       .finally(() => {
+        recount();
         unsubRef.current?.();
         unsubRef.current = null;
         runningRef.current = false;
@@ -83,7 +94,7 @@ export function useCrowdRefresh(): CrowdRefreshState {
         setShowResult(true);
         lingerRef.current = setTimeout(() => setShowResult(false), RESULT_LINGER_MS);
       });
-  }, [ingestPackets]);
+  }, [syncFromEngine]);
 
   // Tear down a session if the board unmounts mid-refresh.
   useEffect(() => {

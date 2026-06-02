@@ -32,13 +32,11 @@ type Update = { authorId: string; name: string; where: string };
 export default function RefreshScreen() {
   const router = useRouter();
   const { c } = useTheme();
-  const ingestPackets = useStore((s) => s.ingestPackets);
-  const friends = useStore((s) => s.friends);
+  const crowdRefresh = useStore((s) => s.crowdRefresh);
 
   const [phase, setPhase] = useState<SessionPhase>('scanning');
   const [fraction, setFraction] = useState(0);
   const [done, setDone] = useState(false);
-  const updatesRef = useRef<Map<string, Update>>(new Map());
   const [updates, setUpdates] = useState<Update[]>([]);
 
   const pulse = useRef(new Animated.Value(0)).current;
@@ -52,32 +50,20 @@ export default function RefreshScreen() {
     );
     loop.start();
 
-    const friendsById = new Map(friends.map((f) => [f.id, f]));
-    const unsub = mockTransport.onInbound((packets) => {
-      const opened = ingestPackets(packets);
-      for (const here of opened) {
-        const friend = friendsById.get(here.authorId);
-        if (friend) updatesRef.current.set(here.authorId, { authorId: here.authorId, name: friend.displayName, where: here.whereText });
-      }
-    });
-
     let cancelled = false;
-    mockTransport
-      .runSession(SESSION_MS, (p) => {
-        if (cancelled) return;
-        setPhase(p.phase);
-        setFraction(p.fraction);
-      })
-      .then(() => {
-        if (cancelled) return;
-        setUpdates([...updatesRef.current.values()]);
-        setDone(true);
-      });
+    crowdRefresh(SESSION_MS, (p) => {
+      if (cancelled) return;
+      setPhase(p.phase);
+      setFraction(p.fraction);
+    }).then((res) => {
+      if (cancelled) return;
+      setUpdates(res.updates);
+      setDone(true);
+    });
 
     return () => {
       cancelled = true;
       loop.stop();
-      unsub();
       mockTransport.stopSession();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

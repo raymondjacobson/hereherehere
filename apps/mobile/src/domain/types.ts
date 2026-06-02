@@ -34,21 +34,10 @@ export type Here = {
   sequence: number;
 };
 
-/** The encrypted unit that travels through the mesh. */
-export type RelayPacket = {
-  packetId: string;
-  senderSignPk: string; // identity of the author/signer
-  senderBoxPk: string; // needed to open the sealed box
-  recipientId: string; // signPk of intended friend (opaque to relays)
-  createdAt: number;
-  sequence: number;
-  ttl: number; // remaining hops
-  expiresAt: number; // hard drop time
-  payloadType: 'here';
-  nonce: string; // base64
-  ciphertext: string; // base64 (sealed here payload)
-  signature: string; // Ed25519 over canonical fields
-};
+/**
+ * The encrypted unit that travels through the mesh is the mesh `Envelope`
+ * (see src/mesh/model/envelope.ts), which supersedes the old RelayPacket.
+ */
 
 /** The public payload encoded into a QR / friend link. */
 export type FriendCodePayload = {
