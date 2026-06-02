@@ -285,6 +285,13 @@ footer .built {
   color: var(--text-tertiary, #9a9082);
 }
 
+.heart-icon {
+  height: 1.05em;
+  width: auto;
+  vertical-align: -0.18em;
+  margin: 0 0.1em;
+}
+
 @media (max-width: 420px) {
   .downloads {
     grid-template-columns: 1fr;
