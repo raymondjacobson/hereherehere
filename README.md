@@ -45,7 +45,7 @@ npm run web:build      # build the static site to apps/web/dist
 
 ### apps/mobile
 
-The React Native app. Runs in **Expo Go** today — crypto is pure JS, the mesh is simulated behind a swappable `Transport` interface, and real BLE drops in later with no product changes. See [apps/mobile/README.md](./apps/mobile/README.md) for architecture and the security model.
+The React Native app. Crypto is pure JS, and the mesh sits behind a swappable `Transport` interface: native builds (dev client / EAS) use real dual-role BLE (central + peripheral over GATT), while **Expo Go** falls back to a simulated mesh — both drive the same anti-entropy sync protocol, so product code never changes. See [apps/mobile/README.md](./apps/mobile/README.md) for architecture and the security model.
 
 ### apps/web
 
