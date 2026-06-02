@@ -172,15 +172,32 @@ export default function ComposeScreen() {
               <Text variant="callout" weight="semibold" color="textSecondary">
                 For
               </Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-                {DURATIONS.map((m) => (
-                  <Chip
-                    key={m}
-                    label={m === 60 ? '1h' : `${m}m`}
-                    selected={durationMin === m}
-                    onPress={() => setDuration(m)}
-                  />
-                ))}
+              <View style={{ flexDirection: 'row', gap: spacing.xs }}>
+                {DURATIONS.map((m) => {
+                  const sel = durationMin === m;
+                  return (
+                    <Pressable
+                      key={m}
+                      onPress={() => {
+                        Haptics.selectionAsync().catch(() => {});
+                        setDuration(m);
+                      }}
+                      style={{
+                        flex: 1,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        paddingVertical: 9,
+                        borderRadius: radius.pill,
+                        borderWidth: 1.5,
+                        borderColor: sel ? c.accent : c.border,
+                        backgroundColor: sel ? c.accentSoft : c.surfaceAlt,
+                      }}>
+                      <Text variant="callout" weight={sel ? 'bold' : 'medium'} color={sel ? 'accent' : 'text'}>
+                        {m === 60 ? '1h' : `${m}m`}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
               </View>
             </View>
 
