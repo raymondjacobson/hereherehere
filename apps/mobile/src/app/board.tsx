@@ -308,6 +308,7 @@ export default function BoardScreen() {
         <MotifButton
           motif={motifs.refresh}
           size={64}
+          glass
           accessibilityLabel="Refresh the crowd"
           overlay={refresh.active ? String(refresh.remaining) : undefined}
           disabled={refresh.active}
@@ -316,6 +317,7 @@ export default function BoardScreen() {
         <MotifButton
           motif={motifs.post}
           size={64}
+          glass
           accessibilityLabel="Post a message"
           onPress={() => router.push('/compose')}
         />
