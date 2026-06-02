@@ -1,14 +1,30 @@
 :root {
-  --bg: #fbf9f5;
-  --surface: #ffffff;
-  --text: #211c16;
-  --text-secondary: #6b6358;
-  --border: #e8dfd2;
-  --pink: #f4b8cb;
-  --blue: #a9c9f0;
-  --yellow: #f6d98a;
-  --accent: #f19db6;
-  --muted: #c4bdb1;
+  /* Pastel rave flyer palette */
+  --bg-base: #fffdf7;
+  --bg-bottom: #f3f5ff;
+  --bg: #fffdf7; /* legacy alias */
+
+  --text: #171313;
+  --text-primary: #171313;
+  --text-secondary: #6f6560;
+  --text-tertiary: #9a8f88;
+
+  --accent-pink: #ff7ab6;
+  --accent-blue: #7debff;
+  --accent-yellow: #ffef75;
+  --accent: #e85fa0; /* deeper pink for legible text links */
+
+  --border-pink: rgba(255, 122, 190, 0.45);
+  --border-blue: rgba(125, 235, 255, 0.45);
+  --border: rgba(255, 122, 190, 0.28); /* legacy generic border */
+
+  --card-bg: rgba(255, 255, 255, 0.72);
+  --surface: rgba(255, 255, 255, 0.72); /* legacy alias */
+
+  --pink: #ff7ab6;
+  --blue: #7debff;
+  --yellow: #ffef75;
+  --muted: #b7afa8;
   --radius: 22px;
 }
 
@@ -24,10 +40,17 @@ html {
 
 body {
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  background: var(--bg);
   color: var(--text);
   line-height: 1.5;
   min-height: 100vh;
+  background-color: var(--bg-bottom);
+  background-image:
+    radial-gradient(circle at 20% 12%, rgba(125, 235, 255, 0.36), transparent 28%),
+    radial-gradient(circle at 80% 10%, rgba(255, 122, 190, 0.34), transparent 30%),
+    radial-gradient(circle at 50% 35%, rgba(255, 239, 117, 0.24), transparent 36%),
+    linear-gradient(180deg, #fffdf7 0%, #f3f5ff 100%);
+  /* Anchor the festival glow to the viewport so it stays airy on long pages. */
+  background-attachment: fixed;
 }
 
 .wrap {
@@ -67,26 +90,29 @@ h1 {
 }
 
 .hero {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: auto;
   display: block;
-  /* Soft-edge the image, matching the app's onboarding vignette.
-     The solid region is kept wide so most of the scene stays visible. */
-  -webkit-mask-image: radial-gradient(130% 120% at 50% 44%, #000 66%, transparent 94%);
-  mask-image: radial-gradient(130% 120% at 50% 44%, #000 66%, transparent 94%);
+  /* Keep the scene's solid backdrop, but feather the rectangular edges so the
+     image melts into the page and the glow bleeds around it (vignette).
+     The gradient is sized so the fade lands inside the image, not outside it. */
+  -webkit-mask-image: radial-gradient(ellipse closest-side at 50% 50%, #000 42%, transparent 99%);
+  mask-image: radial-gradient(ellipse closest-side at 50% 50%, #000 42%, transparent 99%);
 }
 
-/* Paint the page background back in around the edges so the image
-   melts into it on every side (a real color vignette, not just a fade). */
+/* Soft pink/cyan/yellow light glowing around the vignetted clay scene. */
 .hero-vignette {
   position: absolute;
-  inset: 0;
+  inset: -10%;
+  z-index: 0;
   pointer-events: none;
-  background: radial-gradient(
-    closest-side at 50% 46%,
-    transparent 70%,
-    var(--bg) 98%
-  );
+  background:
+    radial-gradient(circle at 36% 40%, rgba(125, 235, 255, 0.38), transparent 58%),
+    radial-gradient(circle at 68% 38%, rgba(255, 122, 190, 0.40), transparent 58%),
+    radial-gradient(circle at 50% 70%, rgba(255, 239, 117, 0.28), transparent 60%);
+  filter: blur(30px);
 }
 
 .blob {
@@ -104,12 +130,32 @@ h1 {
 .blob.blue { background: var(--blue); }
 .blob.yellow { background: var(--yellow); }
 
+/* Clay handshake motif (friend "wants to connect" state) — no circle. */
+.blob.motif {
+  background: none;
+  width: auto;
+  height: auto;
+  margin: 4px 0 20px;
+  filter: drop-shadow(0 10px 22px rgba(255, 122, 190, 0.28));
+}
+
+.blob.motif img {
+  width: 160px;
+  height: auto;
+  display: block;
+}
+
 .card {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--card-bg);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 122, 190, 0.3);
   border-radius: var(--radius);
   padding: 24px;
   margin-top: 16px;
+  box-shadow:
+    0 10px 34px rgba(255, 122, 190, 0.14),
+    0 10px 34px rgba(125, 235, 255, 0.12);
 }
 
 .card h2 {
@@ -208,12 +254,37 @@ footer {
   width: auto;
   gap: 10px;
   padding: 12px 18px;
-  background: var(--text);
-  color: var(--bg);
+  background: var(--card-bg);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  color: var(--text);
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+  transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
 }
 
 .btn.store svg {
   flex: 0 0 auto;
+}
+
+.btn.store.appstore {
+  border-color: var(--border-blue);
+}
+
+.btn.store.googleplay {
+  border-color: var(--border-pink);
+}
+
+.btn.store.appstore:hover {
+  transform: translateY(-1px);
+  border-color: rgba(125, 235, 255, 0.85);
+  box-shadow: 0 8px 24px rgba(125, 235, 255, 0.4);
+}
+
+.btn.store.googleplay:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 122, 190, 0.8);
+  box-shadow: 0 8px 24px rgba(255, 122, 190, 0.36);
 }
 
 .store-txt {
@@ -234,16 +305,9 @@ footer {
 }
 
 .btn.store.disabled {
-  background: var(--surface);
-  border: 1.5px solid var(--border);
-  color: var(--muted);
-  cursor: default;
-  pointer-events: none;
-}
-
-.btn.store.disabled svg {
-  opacity: 0.45;
-  filter: grayscale(1);
+  /* "Coming soon" — non-navigating, but kept colorful per the rave theme.
+     The COMING SOON label communicates status. */
+  cursor: pointer;
 }
 
 .coming-soon {
@@ -262,6 +326,19 @@ footer {
 
 .support .btn.donate {
   margin-top: 16px;
+}
+
+.btn.donate {
+  background: linear-gradient(135deg, #ff7ab6 0%, #f39ac3 100%);
+  color: #171313;
+  box-shadow: 0 8px 26px rgba(255, 122, 190, 0.32);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.btn.donate:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+  box-shadow: 0 12px 32px rgba(255, 122, 190, 0.45);
 }
 
 footer a {
@@ -283,6 +360,13 @@ footer .built {
   display: block;
   margin-top: 10px;
   color: var(--text-tertiary, #9a9082);
+}
+
+.heart-icon {
+  height: 1.05em;
+  width: auto;
+  vertical-align: -0.18em;
+  margin: 0 0.1em;
 }
 
 @media (max-width: 420px) {

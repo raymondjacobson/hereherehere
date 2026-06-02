@@ -1,5 +1,8 @@
 import { useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
+import { type ImageSourcePropType, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { Image } from 'expo-image';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/Text';
@@ -11,10 +14,13 @@ import { radius, spacing } from '@/theme/theme';
 import { useTheme } from '@/theme/useTheme';
 import { useStore } from '@/state/store';
 import { buildSuggestions, filterSuggestions } from '@/domain/autocomplete';
-import { clockTime, HOUR, MIN, windowLabel } from '@/util/time';
+import { clockTime, DAY, HOUR, MIN } from '@/util/time';
+import { motifs } from '@/assets/motifs';
 
-type Step = 'where' | 'until' | 'note' | 'post';
-const ORDER: Step[] = ['where', 'until', 'note', 'post'];
+const STEP = 5 * MIN; // fine-tune step for the −/+ buttons
+const MIN_DURATION = 5 * MIN;
+const DURATIONS = [10, 20, 30, 45, 60]; // minutes, for the "For" pills
+type PickerTarget = 'start' | 'end' | null;
 
 export default function ComposeScreen() {
   const router = useRouter();
@@ -24,270 +30,281 @@ export default function ComposeScreen() {
   const installedPacks = useStore((s) => s.installedPacks);
   const postHere = useStore((s) => s.postHere);
 
-  const [stepIdx, setStepIdx] = useState(0);
-  const step = ORDER[stepIdx];
-
   const [whereText, setWhereText] = useState('');
-  const [presetEnd, setPresetEnd] = useState<number | null>(null);
-  const [endsAt, setEndsAt] = useState<number | null>(null);
   const [note, setNote] = useState('');
+  const [startsAt, setStartsAt] = useState(() => Date.now());
+  const [endsAt, setEndsAt] = useState(() => Date.now() + HOUR);
+  const [pickerFor, setPickerFor] = useState<PickerTarget>(null);
   const [posted, setPosted] = useState(false);
 
   const allSuggestions = useMemo(() => buildSuggestions(installedPacks), [installedPacks]);
-  const suggestions = useMemo(
-    () => filterSuggestions(allSuggestions, whereText),
-    [allSuggestions, whereText],
-  );
+  const suggestions = useMemo(() => filterSuggestions(allSuggestions, whereText), [allSuggestions, whereText]);
 
-  const startsAt = Date.now();
-  const canWhere = whereText.trim().length > 0;
-  const canUntil = endsAt != null && endsAt > Date.now();
+  const now = Date.now();
+  const isNow = startsAt <= now + MIN;
+  const durationMin = Math.max(0, Math.round((endsAt - startsAt) / MIN));
+  const startLabel = isNow ? 'now' : clockTime(startsAt);
+  const endLabel = clockTime(endsAt);
+  const canPost = whereText.trim().length > 0;
 
-  function next() {
-    if (stepIdx < ORDER.length - 1) setStepIdx(stepIdx + 1);
+  // Stepping Start moves the whole window (End follows, duration kept).
+  function adjustStart(deltaMs: number) {
+    const dur = endsAt - startsAt;
+    const n = Math.max(Date.now(), startsAt + deltaMs);
+    setStartsAt(n);
+    setEndsAt(n + dur);
   }
-  function back() {
-    if (stepIdx > 0) setStepIdx(stepIdx - 1);
-    else router.back();
+  // Stepping End changes the duration (Start fixed).
+  function adjustEnd(deltaMs: number) {
+    setEndsAt((prev) => Math.max(startsAt + MIN_DURATION, prev + deltaMs));
+  }
+  // A "For" pill sets the duration; End updates.
+  function setDuration(min: number) {
+    setEndsAt(startsAt + min * MIN);
   }
 
-  function chooseUntil(ms: number) {
-    setEndsAt(Date.now() + ms);
+  function pickSuggestion(label: string, setEnd?: number) {
+    setWhereText(label);
+    if (setEnd && setEnd > startsAt) setEndsAt(setEnd);
+  }
+
+  function onPickerChange(event: DateTimePickerEvent, date?: Date) {
+    if (Platform.OS === 'android') setPickerFor(null);
+    if (!date || event.type === 'dismissed') return;
+    const t = date.getTime();
+    if (pickerFor === 'start') {
+      const dur = endsAt - startsAt;
+      const n = Math.max(Date.now(), t);
+      setStartsAt(n);
+      setEndsAt(n + dur);
+    } else if (pickerFor === 'end') {
+      let n = t;
+      if (n <= startsAt) n += DAY; // crossed midnight
+      setEndsAt(Math.max(startsAt + MIN_DURATION, n));
+    }
   }
 
   function post() {
-    if (!whereText.trim() || !endsAt) return;
+    if (!canPost) return;
     postHere({
       whereText,
       note: note.trim() || undefined,
-      startsAt,
+      startsAt: Math.max(startsAt, Date.now()),
       endsAt,
       eventPackId: installedPacks[0]?.id,
     });
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     setPosted(true);
-    setStepIdx(ORDER.length - 1);
   }
 
-  return (
-    <View style={{ flex: 1, backgroundColor: c.bg, paddingTop: insets.top + spacing.md }}>
-      {/* Top bar */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.xl, gap: spacing.md }}>
-        {!posted ? (
-          <Pressable onPress={back} hitSlop={12}>
-            <Text variant="body" weight="semibold" color="textSecondary">
-              {stepIdx === 0 ? 'Cancel' : 'Back'}
-            </Text>
-          </Pressable>
-        ) : null}
-        <View style={{ flexDirection: 'row', gap: 6, flex: 1, justifyContent: 'center' }}>
-          {ORDER.map((s, i) => (
-            <View
-              key={s}
-              style={{
-                width: i === stepIdx ? 22 : 8,
-                height: 8,
-                borderRadius: 4,
-                backgroundColor: i <= stepIdx ? c.accent : c.border,
-              }}
-            />
-          ))}
+  if (posted) {
+    return (
+      <View style={{ flex: 1, backgroundColor: c.bg, paddingTop: insets.top, paddingBottom: insets.bottom + spacing.md, paddingHorizontal: spacing.xl }}>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.lg }}>
+          <Image source={motifs.message} style={{ width: 120, height: 120 }} contentFit="contain" />
+          <Text variant="title" weight="extrabold" center>
+            Your message is ready to move through the crowd.
+          </Text>
+          <Text variant="body" color="textSecondary" center>
+            It’ll pass to friends when their phones come near yours.
+          </Text>
         </View>
-        {!posted ? <View style={{ width: 48 }} /> : null}
+        <View style={{ gap: spacing.sm }}>
+          <Button title="Refresh the crowd now" big onPress={() => router.replace({ pathname: '/board', params: { refresh: '1' } })} />
+          <Button title="Done" variant="ghost" onPress={() => router.back()} />
+        </View>
       </View>
+    );
+  }
 
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView
-          contentContainerStyle={{ padding: spacing.xl, gap: spacing.xl, flexGrow: 1 }}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}>
+  const pickerValue = pickerFor === 'end' ? new Date(endsAt) : new Date(Math.max(startsAt, now));
+
+  return (
+    <View style={{ flex: 1, backgroundColor: c.bg }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingTop: insets.top + spacing.xl, padding: spacing.xl, gap: spacing.xl }}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
+        showsVerticalScrollIndicator={false}>
           {/* WHERE */}
-          {step === 'where' && (
-            <>
-              <Text variant="hero" weight="extrabold">
-                Where will you be?
-              </Text>
-              <TextField
-                big
-                value={whereText}
-                onChangeText={(t) => {
-                  setWhereText(t);
-                  setPresetEnd(null);
-                }}
-                placeholder="a stage, a landmark, anywhere"
-                autoFocus
-                returnKeyType="next"
-                onSubmitEditing={() => canWhere && next()}
-              />
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+          <View style={{ gap: spacing.md }}>
+            <Text variant="hero" weight="extrabold">
+              Where will you be?
+            </Text>
+            <TextField
+              big
+              value={whereText}
+              onChangeText={setWhereText}
+              placeholder="a stage, a landmark, anywhere"
+              returnKeyType="done"
+            />
+            {suggestions.length > 0 ? (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                keyboardShouldPersistTaps="always"
+                keyboardDismissMode="none"
+                contentContainerStyle={{ gap: spacing.sm, paddingVertical: 2 }}>
                 {suggestions.map((s) => (
-                  <Chip
-                    key={s.key}
-                    label={s.label}
-                    onPress={() => {
-                      setWhereText(s.label);
-                      setPresetEnd(s.setEndsAt ?? null);
-                    }}
-                  />
+                  <Chip key={s.key} label={s.label} onPress={() => pickSuggestion(s.label, s.setEndsAt)} />
                 ))}
-              </View>
-            </>
-          )}
+              </ScrollView>
+            ) : null}
+          </View>
 
-          {/* UNTIL */}
-          {step === 'until' && (
-            <>
-              <Text variant="hero" weight="extrabold">
-                Until when?
+          {/* WHEN */}
+          <Card>
+            <TimeRow
+              label="Start"
+              value={startLabel}
+              onPressValue={() => setPickerFor('start')}
+              onMinus={() => adjustStart(-STEP)}
+              onPlus={() => adjustStart(STEP)}
+              minusDisabled={isNow}
+            />
+
+            <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: c.border, marginVertical: spacing.lg }} />
+
+            <View style={{ gap: spacing.md }}>
+              <Text variant="callout" weight="semibold" color="textSecondary">
+                For
               </Text>
-              <View style={{ gap: spacing.md }}>
-                {presetEnd && presetEnd > Date.now() ? (
-                  <UntilOption
-                    label={`End of set · ${clockTime(presetEnd)}`}
-                    selected={endsAt === presetEnd}
-                    onPress={() => setEndsAt(presetEnd)}
-                  />
-                ) : null}
-                <UntilOption label="30 minutes" selected={isAround(endsAt, 30 * MIN)} onPress={() => chooseUntil(30 * MIN)} />
-                <UntilOption label="1 hour" selected={isAround(endsAt, HOUR)} onPress={() => chooseUntil(HOUR)} />
-                <UntilOption label="2 hours" selected={isAround(endsAt, 2 * HOUR)} onPress={() => chooseUntil(2 * HOUR)} />
+              <View style={{ flexDirection: 'row', gap: spacing.xs }}>
+                {DURATIONS.map((m) => {
+                  const sel = durationMin === m;
+                  return (
+                    <Pressable
+                      key={m}
+                      onPress={() => {
+                        Haptics.selectionAsync().catch(() => {});
+                        setDuration(m);
+                      }}
+                      style={{
+                        flex: 1,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        paddingVertical: 9,
+                        borderRadius: radius.pill,
+                        borderWidth: 1.5,
+                        borderColor: sel ? c.accent : c.border,
+                        backgroundColor: sel ? c.accentSoft : c.surfaceAlt,
+                      }}>
+                      <Text variant="callout" weight={sel ? 'bold' : 'medium'} color={sel ? 'accent' : 'text'}>
+                        {m === 60 ? '1h' : `${m}m`}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
               </View>
+            </View>
 
-              {endsAt ? (
-                <View style={{ gap: spacing.sm }}>
-                  <Text variant="callout" color="textSecondary" center>
-                    Until {clockTime(endsAt)}
-                  </Text>
-                  <View style={{ flexDirection: 'row', justifyContent: 'center', gap: spacing.md }}>
-                    <Stepper label="−15m" onPress={() => setEndsAt(Math.max(Date.now() + 5 * MIN, (endsAt ?? 0) - 15 * MIN))} />
-                    <Stepper label="+15m" onPress={() => setEndsAt((endsAt ?? Date.now()) + 15 * MIN)} />
-                  </View>
-                </View>
-              ) : null}
-            </>
-          )}
+            <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: c.border, marginVertical: spacing.lg }} />
+
+            <TimeRow
+              label="End"
+              value={endLabel}
+              onPressValue={() => setPickerFor('end')}
+              onMinus={() => adjustEnd(-STEP)}
+              onPlus={() => adjustEnd(STEP)}
+              minusDisabled={endsAt - startsAt <= MIN_DURATION}
+            />
+          </Card>
 
           {/* NOTE */}
-          {step === 'note' && (
-            <>
-              <Text variant="hero" weight="extrabold">
-                Add a note?
-              </Text>
-              <TextField
-                big
-                value={note}
-                onChangeText={setNote}
-                placeholder="under the disco ball"
-                autoFocus
-                maxLength={80}
-                returnKeyType="done"
-                onSubmitEditing={next}
-              />
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-                {['under the disco ball', 'left side by sound booth', 'by the bathrooms', 'near the back'].map((n) => (
-                  <Chip key={n} label={n} onPress={() => setNote(n)} />
-                ))}
-              </View>
-            </>
-          )}
-
-          {/* POST / SUCCESS */}
-          {step === 'post' && (
-            <View style={{ flex: 1, gap: spacing.xl }}>
-              {posted ? (
-                <View style={{ flex: 1, justifyContent: 'center', gap: spacing.lg, alignItems: 'center' }}>
-                  <Text style={{ fontSize: 64 }}>🍾</Text>
-                  <Text variant="title" weight="extrabold" center>
-                    Your message is ready to move through the crowd.
-                  </Text>
-                  <Text variant="body" color="textSecondary" center>
-                    It’ll pass to friends when their phones come near yours.
-                  </Text>
-                </View>
-              ) : (
-                <>
-                  <Text variant="hero" weight="extrabold">
-                    Post my message
-                  </Text>
-                  <Card>
-                    <Text variant="heading" weight="bold">
-                      {whereText}
-                    </Text>
-                    {note.trim() ? (
-                      <Text variant="callout" color="textSecondary" style={{ marginTop: spacing.xs }}>
-                        {note.trim()}
-                      </Text>
-                    ) : null}
-                    {endsAt ? (
-                      <Text variant="callout" weight="semibold" style={{ marginTop: spacing.md }}>
-                        {windowLabel(startsAt, endsAt, Date.now())}
-                      </Text>
-                    ) : null}
-                  </Card>
-                </>
-              )}
-            </View>
-          )}
+          <View style={{ gap: spacing.md }}>
+            <Text variant="meta" weight="bold" color="textSecondary">
+              NOTE (OPTIONAL)
+            </Text>
+            <TextField value={note} onChangeText={setNote} placeholder="under the disco ball" maxLength={80} returnKeyType="done" />
+          </View>
         </ScrollView>
 
-        {/* Bottom action */}
-        <View style={{ paddingHorizontal: spacing.xl, paddingBottom: insets.bottom + spacing.md, gap: spacing.sm }}>
-          {step === 'where' && <Button title="Next" big onPress={next} disabled={!canWhere} />}
-          {step === 'until' && <Button title="Next" big onPress={next} disabled={!canUntil} />}
-          {step === 'note' && <Button title={note.trim() ? 'Next' : 'Skip'} big onPress={next} />}
-          {step === 'post' && !posted && <Button title="Post my message" big onPress={post} />}
-          {step === 'post' && posted && (
-            <>
-              <Button title="Refresh the crowd now" big onPress={() => router.replace('/refresh')} />
-              <Button title="Done" variant="ghost" onPress={() => router.back()} />
-            </>
-          )}
+        {/* Fixed to the drawer bottom; the keyboard slides over it (no float). */}
+        <View style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.md, paddingBottom: insets.bottom + spacing.md, backgroundColor: c.bg }}>
+          <Button title="Post Message" big onPress={post} disabled={!canPost} />
         </View>
-      </KeyboardAvoidingView>
+
+      {/* Time picker */}
+      {pickerFor && Platform.OS === 'ios' ? (
+        <Pressable
+          onPress={() => setPickerFor(null)}
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#0006', justifyContent: 'flex-end' }}>
+          <Pressable
+            onPress={(e) => e.stopPropagation()}
+            style={{ backgroundColor: c.surface, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, paddingBottom: insets.bottom + spacing.md }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: spacing.lg }}>
+              <Text variant="body" weight="semibold" color="textSecondary">
+                {pickerFor === 'start' ? 'Start time' : 'End time'}
+              </Text>
+              <Pressable onPress={() => setPickerFor(null)} hitSlop={12}>
+                <Text variant="body" weight="bold" color="accent">
+                  Done
+                </Text>
+              </Pressable>
+            </View>
+            <DateTimePicker value={pickerValue} mode="time" display="spinner" is24Hour={false} locale="en_US" onChange={onPickerChange} themeVariant="light" />
+          </Pressable>
+        </Pressable>
+      ) : null}
+      {pickerFor && Platform.OS !== 'ios' ? (
+        <DateTimePicker value={pickerValue} mode="time" is24Hour={false} onChange={onPickerChange} />
+      ) : null}
     </View>
   );
 }
 
-function isAround(endsAt: number | null, durationMs: number): boolean {
-  if (endsAt == null) return false;
-  const target = Date.now() + durationMs;
-  return Math.abs(endsAt - target) < 2 * MIN;
-}
-
-function UntilOption({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
+function StepButton({ motif, onPress, disabled }: { motif: ImageSourcePropType; onPress: () => void; disabled?: boolean }) {
   const { c } = useTheme();
   return (
     <Pressable
-      onPress={onPress}
+      disabled={disabled}
+      onPress={() => {
+        Haptics.selectionAsync().catch(() => {});
+        onPress();
+      }}
       style={({ pressed }) => ({
-        backgroundColor: selected ? c.accentSoft : c.surface,
-        borderColor: selected ? c.accent : c.border,
-        borderWidth: 1.5,
-        borderRadius: radius.md,
-        padding: spacing.lg,
-        opacity: pressed ? 0.9 : 1,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: c.surfaceAlt,
+        alignItems: 'center',
+        justifyContent: 'center',
+        opacity: disabled ? 0.35 : pressed ? 0.7 : 1,
       })}>
-      <Text variant="body" weight={selected ? 'bold' : 'medium'} color={selected ? 'accent' : 'text'}>
-        {label}
-      </Text>
+      <Image source={motif} style={{ width: 20, height: 20 }} contentFit="contain" />
     </Pressable>
   );
 }
 
-function Stepper({ label, onPress }: { label: string; onPress: () => void }) {
+function TimeRow({
+  label,
+  value,
+  onPressValue,
+  onMinus,
+  onPlus,
+  minusDisabled,
+}: {
+  label: string;
+  value: string;
+  onPressValue: () => void;
+  onMinus: () => void;
+  onPlus: () => void;
+  minusDisabled?: boolean;
+}) {
   const { c } = useTheme();
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        backgroundColor: c.surfaceAlt,
-        borderRadius: radius.pill,
-        paddingVertical: spacing.sm,
-        paddingHorizontal: spacing.lg,
-        opacity: pressed ? 0.8 : 1,
-      })}>
-      <Text variant="callout" weight="bold">
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+      <Text variant="callout" weight="semibold" color="textSecondary" style={{ width: 40 }}>
         {label}
       </Text>
-    </Pressable>
+      <Pressable onPress={onPressValue} hitSlop={8} style={{ flex: 1 }}>
+        <Text variant="heading" weight="bold" style={{ color: c.accent }}>
+          {value}
+        </Text>
+      </Pressable>
+      <StepButton motif={motifs.minus} onPress={onMinus} disabled={minusDisabled} />
+      <StepButton motif={motifs.plus} onPress={onPlus} />
+    </View>
   );
 }

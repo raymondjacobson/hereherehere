@@ -21,14 +21,14 @@ export default function NameScreen() {
     setBusy(true);
     try {
       await createIdentity(name);
-      router.push('/onboarding/explainer');
+      router.push('/onboarding/avatar');
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <Screen>
+    <Screen glow={false}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>

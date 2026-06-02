@@ -27,10 +27,27 @@ export class BleTransport implements Transport {
   private aborted = false;
   private nearby = 0;
   private readonly nearbyHandlers = new Set<(n: number) => void>();
+  private readonly updateHandlers = new Set<() => void>();
   private readonly seenPeers = new Set<string>();
 
   configure(node: MeshEngine): void {
     this.node = node;
+  }
+
+  onUpdate(handler: () => void): () => void {
+    this.updateHandlers.add(handler);
+    return () => this.updateHandlers.delete(handler);
+  }
+
+  private notifyUpdate(): void {
+    this.updateHandlers.forEach((h) => h());
+  }
+
+  /** Pull-to-refresh: a short scan + sync burst. */
+  async boost(): Promise<number> {
+    const result = await this.runSession(2_000);
+    this.notifyUpdate();
+    return result.peersSynced;
   }
 
   private async ensureManager(): Promise<BleManager> {

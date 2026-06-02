@@ -99,7 +99,7 @@ export const radius = {
 } as const;
 
 export const fontFamily = {
-  // Plus Jakarta Sans — modern, friendly, not Inter. Good numerals.
+  // Plus Jakarta Sans — used throughout.
   regular: 'Jakarta_400Regular',
   medium: 'Jakarta_500Medium',
   semibold: 'Jakarta_600SemiBold',

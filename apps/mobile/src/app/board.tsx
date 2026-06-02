@@ -1,66 +1,40 @@
-import { useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Easing, FlatList, Pressable, RefreshControl, useWindowDimensions, View } from 'react-native';
+import { Image } from 'expo-image';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/Text';
-import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { Avatar } from '@/components/Avatar';
 import { HereCard } from '@/components/HereCard';
+import { ImageHero } from '@/components/ImageHero';
+import { MotifButton } from '@/components/MotifButton';
+import { Glow } from '@/components/Glow';
 import { radius, spacing } from '@/theme/theme';
 import { useTheme } from '@/theme/useTheme';
 import { useNow } from '@/hooks/useNow';
+import { useLiveSync } from '@/hooks/useLiveSync';
 import { useStore } from '@/state/store';
 import { computeBoard, type BoardEntry } from '@/domain/board';
-import { mockTransport } from '@/transport/mock';
+import { motifs } from '@/assets/motifs';
 
-function IconButton({ label, onPress }: { label: string; onPress: () => void }) {
-  const { c } = useTheme();
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        backgroundColor: c.surfaceAlt,
-        borderWidth: 1,
-        borderColor: c.border,
-        alignItems: 'center',
-        justifyContent: 'center',
-        opacity: pressed ? 0.8 : 1,
-      })}>
-      <Text style={{ fontSize: 20 }}>{label}</Text>
-    </Pressable>
-  );
-}
+/** Pull distance (pts) over which the motif fades in as you pull. */
+const PULL = 90;
 
-/** Friendly indicator of how many nearby phones could carry your messages. */
-function NearbyChip({ count, onPress }: { count: number; onPress: () => void }) {
+/**
+ * Top-left live status: how many phones we're hearing nearby. Always on while
+ * the board is open — friends' messages arrive on their own; pull down to boost.
+ */
+function StatusPill({ nearby }: { nearby: number }) {
   const { c } = useTheme();
-  const active = count > 0;
+  const active = nearby > 0;
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.sm,
-        alignSelf: 'flex-start',
-        marginTop: spacing.sm,
-        paddingVertical: 6,
-        paddingHorizontal: spacing.md,
-        borderRadius: radius.pill,
-        backgroundColor: c.surfaceAlt,
-        borderWidth: 1,
-        borderColor: c.border,
-        opacity: pressed ? 0.8 : 1,
-      })}>
-      <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: active ? c.success : c.textTertiary }} />
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.sm }}>
+      <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: active ? c.success : c.textTertiary }} />
       <Text variant="meta" weight="semibold" color={active ? 'text' : 'textSecondary'}>
-        {active ? `${count} nearby` : 'Looking nearby…'}
+        {active ? `${nearby} nearby` : 'Looking nearby…'}
       </Text>
-    </Pressable>
+    </View>
   );
 }
 
@@ -70,21 +44,63 @@ export default function BoardScreen() {
   const insets = useSafeAreaInsets();
   const now = useNow();
 
+  const { width } = useWindowDimensions();
   const identity = useStore((s) => s.identity);
   const friends = useStore((s) => s.friends);
   const heres = useStore((s) => s.heres);
   const [showQuiet, setShowQuiet] = useState(false);
-  const [nearby, setNearby] = useState(() => mockTransport.getNearby());
+  // Live sync: friends' messages arrive on their own while the board is open.
+  const { nearby, boost } = useLiveSync();
 
-  // Ambient nearby-peer count while the board is on screen.
+  // Custom pull-to-refresh: the refresh motif winds as you pull, then spins
+  // while a boost is in flight.
+  const [refreshing, setRefreshing] = useState(false);
+  const refreshingRef = useRef(false);
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const spin = useRef(new Animated.Value(0)).current;
+  // Reveal gap for programmatic refreshes (e.g. "Refresh the crowd now"): there's
+  // no real pull, so we open a little space at the top so the motif sits in a gap
+  // instead of on the title — mimicking a manual pull-down.
+  const reveal = useRef(new Animated.Value(0)).current;
+
+  // The native RefreshControl owns the pull/hold/retract for gesture refreshes
+  // (smooth); we hide its spinner and overlay our motif, spinning while the boost
+  // runs. For programmatic refreshes there's no gesture, so `withReveal` animates
+  // the gap ourselves.
+  const triggerRefresh = useCallback(
+    async (withReveal = false) => {
+      if (refreshingRef.current) return;
+      refreshingRef.current = true;
+      spin.setValue(0);
+      setRefreshing(true);
+      if (withReveal) {
+        Animated.timing(reveal, { toValue: PULL, duration: 220, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+      }
+      const loop = Animated.loop(
+        Animated.timing(spin, { toValue: 1, duration: 900, easing: Easing.linear, useNativeDriver: false }),
+      );
+      loop.start();
+      await boost();
+      loop.stop();
+      if (withReveal) {
+        Animated.timing(reveal, { toValue: 0, duration: 260, easing: Easing.inOut(Easing.cubic), useNativeDriver: false }).start();
+      }
+      refreshingRef.current = false;
+      setRefreshing(false);
+    },
+    [boost, spin, reveal],
+  );
+
+  // Arriving from "Refresh the crowd now" (e.g. just after posting) triggers a
+  // one-shot boost in place rather than a full-screen takeover.
+  const { refresh: refreshParam } = useLocalSearchParams<{ refresh?: string }>();
+  const autoStarted = useRef(false);
   useEffect(() => {
-    mockTransport.startAmbient();
-    const unsub = mockTransport.onNearby(setNearby);
-    return () => {
-      unsub();
-      mockTransport.stopAmbient();
-    };
-  }, []);
+    if (refreshParam === '1' && !autoStarted.current) {
+      autoStarted.current = true;
+      triggerRefresh(true);
+    }
+  }, [refreshParam, triggerRefresh]);
 
   const ownHere = identity ? heres[identity.signPk] : undefined;
 
@@ -101,19 +117,27 @@ export default function BoardScreen() {
 
   const friendsById = useMemo(() => new Map(friends.map((f) => [f.id, f])), [friends]);
 
+  const pullOpacity = scrollY.interpolate({ inputRange: [-PULL, -16, 0], outputRange: [1, 0.1, 0], extrapolate: 'clamp' });
+  const pullScale = scrollY.interpolate({ inputRange: [-PULL, 0], outputRange: [1, 0.6], extrapolate: 'clamp' });
+  const spinRotate = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+
   const header = (
-    <View style={{ gap: spacing.lg, paddingBottom: spacing.lg }}>
-      {/* App bar */}
+    <View>
+      {/* Reveal gap opened on a programmatic "refresh now" so the motif sits
+          above the title instead of over it. Zero-height otherwise. */}
+      <Animated.View pointerEvents="none" style={{ height: reveal }} />
+      <View style={{ gap: spacing.lg, paddingBottom: spacing.lg }}>
+      {/* App bar — scrolls away with the content */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <View>
           <Text variant="title" weight="extrabold">
             hereherehere
           </Text>
-          <NearbyChip count={nearby} onPress={() => router.push('/refresh')} />
+          <StatusPill nearby={nearby} />
         </View>
-        <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-          <IconButton label="👥" onPress={() => router.push('/friends/code')} />
-          <IconButton label="⚙️" onPress={() => router.push('/settings')} />
+        <View style={{ flexDirection: 'row', gap: spacing.md }}>
+          <MotifButton glass motif={motifs.connect} accessibilityLabel="Friend code" onPress={() => router.push('/friends/code')} />
+          <MotifButton glass motif={motifs.settings} accessibilityLabel="Settings" onPress={() => router.push('/settings')} />
         </View>
       </View>
 
@@ -127,6 +151,8 @@ export default function BoardScreen() {
             state={now < ownHere.endsAt ? 'active' : 'expired'}
             now={now}
             isSelf
+            emoji={identity.emoji}
+            seed={identity.signPk}
           />
         </Pressable>
       ) : (
@@ -142,18 +168,19 @@ export default function BoardScreen() {
 
       {board.primary.length > 0 ? (
         <Text variant="meta" weight="bold" color="textSecondary" style={{ marginTop: spacing.sm }}>
-          FRIENDS · BY LATEST MESSAGE
+          FRIENDS
         </Text>
       ) : null}
+      </View>
     </View>
   );
 
   const footer = (
     <View style={{ paddingTop: spacing.lg, gap: spacing.lg }}>
-      {board.primary.length === 0 && friends.length > 0 ? (
-        <Text variant="callout" color="textSecondary" center style={{ paddingVertical: spacing.lg }}>
-          No recent messages yet. Pull a crowd refresh to check.
-        </Text>
+      {board.primary.length === 0 ? (
+        <View style={{ alignItems: 'center', paddingTop: spacing.md }}>
+          <ImageHero mask source={require('../../assets/states/empty-board.png')} size={Math.min(width * 0.72, 300)} />
+        </View>
       ) : null}
 
       {board.quiet.length > 0 ? (
@@ -171,14 +198,34 @@ export default function BoardScreen() {
             </Text>
           </Pressable>
           {showQuiet
-            ? board.quiet.map((f) => (
-                <View key={f.id} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.lg, paddingHorizontal: spacing.sm }}>
-                  <Avatar name={f.displayName} colorIndex={f.colorIndex} size={40} muted />
-                  <Text variant="body" weight="medium" color="textSecondary">
-                    {f.displayName}
-                  </Text>
-                </View>
-              ))
+            ? board.quiet.map((entry) =>
+                entry.here ? (
+                  <HereCard
+                    key={entry.friend.id}
+                    name={entry.friend.displayName}
+                    colorIndex={entry.friend.colorIndex}
+                    here={entry.here}
+                    state="expired"
+                    now={now}
+                    emoji={entry.friend.emoji}
+                    seed={entry.friend.id}
+                  />
+                ) : (
+                  <View key={entry.friend.id} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.lg, paddingHorizontal: spacing.sm }}>
+                    <Avatar
+                      name={entry.friend.displayName}
+                      colorIndex={entry.friend.colorIndex}
+                      size={40}
+                      muted
+                      emoji={entry.friend.emoji}
+                      seed={entry.friend.id}
+                    />
+                    <Text variant="body" weight="medium" color="textSecondary">
+                      {entry.friend.displayName}
+                    </Text>
+                  </View>
+                ),
+              )
             : null}
         </View>
       ) : null}
@@ -187,6 +234,7 @@ export default function BoardScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
+      <Glow />
       <FlatList<BoardEntry>
         data={board.primary}
         keyExtractor={(item) => item.friend.id}
@@ -199,34 +247,56 @@ export default function BoardScreen() {
             here={item.here}
             state={item.state}
             now={now}
+            emoji={item.friend.emoji}
+            seed={item.friend.id}
           />
         )}
         ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
         contentContainerStyle={{
           paddingTop: insets.top + spacing.md,
           paddingHorizontal: spacing.xl,
-          paddingBottom: insets.bottom + 160,
+          paddingBottom: insets.bottom + 130,
         }}
         showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onScroll={(e) => scrollY.setValue(e.nativeEvent.contentOffset.y)}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => triggerRefresh()}
+            tintColor="transparent"
+            colors={['transparent']}
+            progressViewOffset={insets.top + 6}
+          />
+        }
       />
 
-      {/* Bottom actions */}
-      <View
+      {/* Pull-to-refresh indicator: the native control owns the motion; we just
+          fade the motif in on pull and spin it (centered in the held gap). */}
+      <Animated.View
+        pointerEvents="none"
         style={{
           position: 'absolute',
+          top: insets.top + 18,
           left: 0,
           right: 0,
-          bottom: 0,
-          paddingHorizontal: spacing.xl,
-          paddingTop: spacing.lg,
-          paddingBottom: insets.bottom + spacing.md,
-          gap: spacing.sm,
-          backgroundColor: c.bg,
-          borderTopWidth: 1,
-          borderTopColor: c.border,
+          alignItems: 'center',
+          zIndex: 20,
+          opacity: refreshing ? 1 : pullOpacity,
+          transform: [{ scale: refreshing ? 1 : pullScale }, { rotate: refreshing ? spinRotate : '0deg' }],
         }}>
-        <Button title="Refresh the crowd" variant="secondary" onPress={() => router.push('/refresh')} />
-        <Button title="Post a message" big onPress={() => router.push('/compose')} />
+        <Image source={motifs.refresh} style={{ width: 40, height: 40 }} contentFit="contain" />
+      </Animated.View>
+
+      {/* Floating Post action — pull down to boost the crowd refresh */}
+      <View style={{ position: 'absolute', right: spacing.xl, bottom: insets.bottom + spacing.md }}>
+        <MotifButton
+          motif={motifs.post}
+          size={64}
+          glass
+          accessibilityLabel="Post a message"
+          onPress={() => router.push('/compose')}
+        />
       </View>
     </View>
   );

@@ -4,19 +4,15 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/Text';
 import { Button } from '@/components/Button';
-import { Illustration } from '@/components/Illustration';
 import { ImageHero } from '@/components/ImageHero';
 import { spacing } from '@/theme/theme';
 import { useTheme } from '@/theme/useTheme';
-import { useStore } from '@/state/store';
 import { AVAILABLE_PACKS } from '@/data/packs/portola';
 
 type Page = {
   title: string;
   body: string;
-  image?: ImageSourcePropType;
-  emoji?: string;
-  tint?: 'pink' | 'blue' | 'yellow';
+  image: ImageSourcePropType;
 };
 
 const PAGES: Page[] = [
@@ -55,10 +51,7 @@ export default function ExplainerScreen() {
       return;
     }
     if (AVAILABLE_PACKS.length > 0) router.push('/onboarding/packs');
-    else {
-      useStore.getState().completeOnboarding();
-      router.replace('/board');
-    }
+    else router.push('/onboarding/permissions');
   }
 
   return (
@@ -74,11 +67,7 @@ export default function ExplainerScreen() {
           <View
             key={p.title}
             style={{ width, alignItems: 'center', justifyContent: 'center', gap: spacing.xl }}>
-            {p.image ? (
-              <ImageHero source={p.image} size={heroSize} />
-            ) : (
-              <Illustration emoji={p.emoji ?? '✨'} tint={p.tint ?? 'blue'} />
-            )}
+            <ImageHero source={p.image} size={heroSize} />
             <View style={{ gap: spacing.md, paddingHorizontal: spacing.xl }}>
               <Text variant="title" weight="extrabold" center>
                 {p.title}

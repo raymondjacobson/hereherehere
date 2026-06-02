@@ -8,11 +8,15 @@
     "scheme": "hereherehere",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSBluetoothAlwaysUsageDescription": "hereherehere uses Bluetooth to pass messages between nearby phones when there’s no signal. It never tracks your location.",
+        "NSBluetoothPeripheralUsageDescription": "hereherehere uses Bluetooth to pass messages between nearby phones when there’s no signal. It never tracks your location."
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#FEF4E1",
+        "backgroundColor": "#EDC6C9",
         "foregroundImage": "./assets/images/android-icon-foreground.png"
       },
       "predictiveBackGestureEnabled": false
@@ -41,7 +45,9 @@
         }
       ],
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-notifications",
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,

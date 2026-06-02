@@ -8,6 +8,7 @@ export function buildPayload(identity: LocalIdentity): FriendCodePayload {
   return {
     v: FRIEND_CODE_VERSION,
     n: identity.displayName,
+    ...(identity.emoji ? { e: identity.emoji } : null),
     s: identity.signPk,
     b: identity.boxPk,
     t: identity.createdAt,

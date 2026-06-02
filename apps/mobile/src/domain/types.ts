@@ -2,6 +2,7 @@
 
 export type LocalIdentity = {
   displayName: string;
+  emoji?: string; // avatar emoji; travels with the friend code
   signPk: string; // base64 — also the friend id
   boxPk: string; // base64
   createdAt: number;
@@ -11,6 +12,7 @@ export type LocalIdentity = {
 export type Friend = {
   id: string; // = signPk
   displayName: string;
+  emoji?: string; // avatar emoji, as chosen by the friend
   signPk: string;
   boxPk: string;
   addedAt: number;
@@ -41,6 +43,7 @@ export type Here = {
 export type FriendCodePayload = {
   v: number;
   n: string; // displayName
+  e?: string; // avatar emoji
   s: string; // signPk (base64)
   b: string; // boxPk (base64)
   t: number; // createdAt

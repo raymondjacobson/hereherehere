@@ -46,7 +46,16 @@ export interface Transport {
    *  current value. Returns an unsubscribe fn. */
   onNearby(handler: (count: number) => void): () => void;
 
-  /** Start/stop ambient peer discovery while the app is foregrounded. */
+  /** Subscribe to "the local board may have changed" — fired after ambient
+   *  trickle / boost sync new statuses into the engine, so the UI can pull them
+   *  in via the store. Returns an unsubscribe fn. */
+  onUpdate(handler: () => void): () => void;
+
+  /** Start/stop ambient peer discovery while the app is foregrounded. While
+   *  ambient, fresh messages trickle in on their own (see onUpdate). */
   startAmbient(): void;
   stopAmbient(): void;
+
+  /** A high-intensity scan burst (pull-to-refresh). Resolves when it settles. */
+  boost(): Promise<number>;
 }

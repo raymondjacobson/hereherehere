@@ -2,13 +2,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { generateKeyPairSet, friendIdOf } from '@/crypto/keys';
+import { defaultEmojiFor } from '@/data/emoji';
 import type { MeshEngine } from '@/mesh/engine';
 import { isNewer } from '@/mesh/resolve/latestStatus';
 import type { EventPack, Friend, FriendCodePayload, Here, LocalIdentity } from '@/domain/types';
 import { mockTransport } from '@/transport/mock';
 import { generatePeers, loadPeers, savePeers, clearPeers } from '@/transport/syntheticPeers';
 import { clearEngine, createEngine, getEngine } from './engine';
-import { loadSecrets, storeSecrets, getSecretsSync, clearSecrets } from './secrets';
+import { loadSecrets, storeSecrets, clearSecrets } from './secrets';
 
 export type HereRecord = Here & { receivedAt?: number };
 
@@ -23,13 +24,25 @@ type AppState = {
   heres: Record<string, HereRecord>;
   installedPacks: EventPack[];
 
+  // permissions (cached for display; the OS stays source of truth for notifications)
+  bluetoothEnabled: boolean;
+  notificationsEnabled: boolean;
+  /** whether the app-start permissions priming has been shown */
+  permissionsPrompted: boolean;
+
   // lifecycle
   init: () => Promise<void>;
 
   // identity / onboarding
   createIdentity: (displayName: string) => Promise<void>;
   setDisplayName: (name: string) => void;
+  setEmoji: (emoji: string) => void;
   completeOnboarding: () => void;
+
+  // permissions
+  setBluetoothEnabled: (v: boolean) => void;
+  setNotificationsEnabled: (v: boolean) => void;
+  markPermissionsPrompted: () => void;
 
   // friends
   addFriend: (payload: FriendCodePayload) => Friend;
@@ -41,6 +54,8 @@ type AppState = {
     durationMs: number,
     onProgress?: Parameters<typeof mockTransport.runSession>[1],
   ) => Promise<{ updates: RefreshUpdate[] }>;
+  /** Pull the engine's latest decrypted statuses into the board (ambient/boost). */
+  syncFromEngine: () => void;
 
   // packs
   installPack: (pack: EventPack) => void;
@@ -75,6 +90,9 @@ export const useStore = create<AppState>()(
       friends: [],
       heres: {},
       installedPacks: [],
+      bluetoothEnabled: false,
+      notificationsEnabled: false,
+      permissionsPrompted: false,
 
       init: async () => {
         const secrets = await loadSecrets();
@@ -95,6 +113,9 @@ export const useStore = create<AppState>()(
         await storeSecrets(keys);
         const identity: LocalIdentity = {
           displayName: displayName.trim(),
+          // Seed a pleasant default so the avatar is never an empty letter;
+          // the user can change it in the next onboarding step or in settings.
+          emoji: defaultEmojiFor(keys.signPk),
           signPk: keys.signPk,
           boxPk: keys.boxPk,
           createdAt: Date.now(),
@@ -110,22 +131,34 @@ export const useStore = create<AppState>()(
         set({ identity: { ...id, displayName: name.trim() } });
       },
 
+      setEmoji: (emoji) => {
+        const id = get().identity;
+        if (!id) return;
+        set({ identity: { ...id, emoji } });
+      },
+
       completeOnboarding: () => set({ onboardingComplete: true }),
+
+      setBluetoothEnabled: (v) => set({ bluetoothEnabled: v }),
+      setNotificationsEnabled: (v) => set({ notificationsEnabled: v }),
+      markPermissionsPrompted: () => set({ permissionsPrompted: true }),
 
       addFriend: (payload) => {
         const id = friendIdOf({ signPk: payload.s });
         const existing = get().friends.find((f) => f.id === id);
         if (existing) {
+          // Re-scanning refreshes the name and emoji the friend chose.
           const friends = get().friends.map((f) =>
-            f.id === id ? { ...f, displayName: payload.n } : f,
+            f.id === id ? { ...f, displayName: payload.n, emoji: payload.e } : f,
           );
           set({ friends });
           getEngine()?.setFriends(friends);
-          return { ...existing, displayName: payload.n };
+          return { ...existing, displayName: payload.n, emoji: payload.e };
         }
         const friend: Friend = {
           id,
           displayName: payload.n,
+          emoji: payload.e,
           signPk: payload.s,
           boxPk: payload.b,
           addedAt: Date.now(),
@@ -181,6 +214,11 @@ export const useStore = create<AppState>()(
         return { updates };
       },
 
+      syncFromEngine: () => {
+        const engine = getEngine();
+        if (engine) set({ heres: mergeHeres(get().heres, engine) });
+      },
+
       installPack: (pack) => {
         const existing = get().installedPacks.filter((p) => p.id !== pack.id);
         set({ installedPacks: [...existing, pack] });
@@ -220,6 +258,9 @@ export const useStore = create<AppState>()(
           friends: [],
           heres: {},
           installedPacks: [],
+          bluetoothEnabled: false,
+          notificationsEnabled: false,
+          permissionsPrompted: false,
         });
       },
     }),
@@ -232,6 +273,9 @@ export const useStore = create<AppState>()(
         friends: s.friends,
         heres: s.heres,
         installedPacks: s.installedPacks,
+        bluetoothEnabled: s.bluetoothEnabled,
+        notificationsEnabled: s.notificationsEnabled,
+        permissionsPrompted: s.permissionsPrompted,
       }),
       onRehydrateStorage: () => (state) => {
         state?.init().finally(() => useStore.setState({ hydrated: true }));

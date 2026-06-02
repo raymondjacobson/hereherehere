@@ -1,15 +1,20 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, Text as RNText, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/Text';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { TextField } from '@/components/TextField';
+import { Avatar } from '@/components/Avatar';
+import { EmojiPicker } from '@/components/EmojiPicker';
+import { PermissionItem } from '@/components/PermissionItem';
 import { spacing } from '@/theme/theme';
 import { useTheme } from '@/theme/useTheme';
 import { useStore } from '@/state/store';
 import { AVAILABLE_PACKS } from '@/data/packs/portola';
+import { PERMISSIONS } from '@/permissions/catalog';
+import { defaultEmojiFor } from '@/data/emoji';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -31,6 +36,7 @@ export default function SettingsScreen() {
   const friends = useStore((s) => s.friends);
   const installedPacks = useStore((s) => s.installedPacks);
   const setDisplayName = useStore((s) => s.setDisplayName);
+  const setEmoji = useStore((s) => s.setEmoji);
   const installPack = useStore((s) => s.installPack);
   const uninstallPack = useStore((s) => s.uninstallPack);
   const seedDemoFriends = useStore((s) => s.seedDemoFriends);
@@ -38,6 +44,9 @@ export default function SettingsScreen() {
 
   const [name, setName] = useState(identity?.displayName ?? '');
   const [seeded, setSeeded] = useState(false);
+  const [emojiOpen, setEmojiOpen] = useState(false);
+
+  const currentGlyph = identity?.emoji?.trim() || (identity?.signPk ? defaultEmojiFor(identity.signPk) : '🙂');
 
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
@@ -63,15 +72,46 @@ export default function SettingsScreen() {
       <ScrollView
         contentContainerStyle={{ paddingHorizontal: spacing.xl, gap: spacing.xxl, paddingBottom: insets.bottom + spacing.xxl }}
         showsVerticalScrollIndicator={false}>
-        <Section title="Your name">
-          <TextField
-            value={name}
-            onChangeText={setName}
-            onEndEditing={() => name.trim() && setDisplayName(name)}
-            placeholder="your name"
-            autoCapitalize="words"
-            maxLength={24}
-          />
+        <Section title="You">
+          <Card>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.lg }}>
+              <Avatar
+                name={name}
+                colorIndex={0}
+                size={56}
+                emoji={identity?.emoji}
+                seed={identity?.signPk}
+              />
+              <View style={{ flex: 1 }}>
+                <TextField
+                  value={name}
+                  onChangeText={(t) => {
+                    setName(t);
+                    // Commit live so the edit isn't lost if the field never blurs
+                    // (e.g. tapping "Done" closes the screen without blurring).
+                    if (t.trim()) setDisplayName(t);
+                  }}
+                  placeholder="your name"
+                  autoCapitalize="words"
+                  maxLength={24}
+                />
+              </View>
+            </View>
+          </Card>
+          <Card onPress={() => setEmojiOpen((o) => !o)}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text variant="body" weight="semibold">
+                Your emoji
+              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                <RNText style={{ fontSize: 22 }}>{currentGlyph}</RNText>
+                <Text variant="callout" weight="bold" color="accent">
+                  {emojiOpen ? 'Done' : 'Change'}
+                </Text>
+              </View>
+            </View>
+          </Card>
+          {emojiOpen ? <EmojiPicker value={identity?.emoji} onSelect={setEmoji} tile={44} /> : null}
         </Section>
 
         <Section title="Friends">
@@ -83,6 +123,14 @@ export default function SettingsScreen() {
               Tap to show your friend code or scan one
             </Text>
           </Card>
+        </Section>
+
+        <Section title="Permissions">
+          <View style={{ gap: spacing.xxl, marginTop: spacing.xs }}>
+            {PERMISSIONS.map((info) => (
+              <PermissionItem key={info.key} info={info} imageSize={160} />
+            ))}
+          </View>
         </Section>
 
         <Section title="Event packs">

@@ -7,6 +7,10 @@ import type { SyntheticPeer } from './syntheticPeers';
 
 const DURATIONS = [30, 60, 90, 120];
 
+/** Length of one crowd-refresh session. Shared by the ambient board indicator
+ *  and the full-screen notification ceremony so they stay in lockstep. */
+export const SESSION_MS = 25_000;
+
 function sleep(ms: number) {
   return new Promise<void>((r) => setTimeout(r, ms));
 }
@@ -27,10 +31,21 @@ export class MockTransport implements Transport {
 
   private nearby = 0;
   private nearbyHandlers = new Set<(n: number) => void>();
+  private updateHandlers = new Set<() => void>();
   private ambientTimer: ReturnType<typeof setInterval> | null = null;
+  private trickleTimer: ReturnType<typeof setInterval> | null = null;
 
   configure(node: MeshEngine) {
     this.node = node;
+  }
+
+  onUpdate(handler: () => void) {
+    this.updateHandlers.add(handler);
+    return () => this.updateHandlers.delete(handler);
+  }
+
+  private notifyUpdate() {
+    this.updateHandlers.forEach((h) => h());
   }
 
   /** (Re)build synthetic peer engines, each friends with the local user. */
@@ -80,6 +95,9 @@ export class MockTransport implements Transport {
     if (this.ambientTimer) return;
     this.rollNearby();
     this.ambientTimer = setInterval(() => this.rollNearby(), 3500);
+    // While the app is open we're always listening: occasionally a friend's
+    // fresh message trickles in on its own (no manual refresh required).
+    this.trickleTimer = setInterval(() => this.trickle(), 8000);
   }
 
   stopAmbient() {
@@ -87,6 +105,41 @@ export class MockTransport implements Transport {
       clearInterval(this.ambientTimer);
       this.ambientTimer = null;
     }
+    if (this.trickleTimer) {
+      clearInterval(this.trickleTimer);
+      this.trickleTimer = null;
+    }
+  }
+
+  /** Occasionally sync one peer's fresh message in — the always-on live sync. */
+  private trickle() {
+    const node = this.node;
+    if (!node || !this.peers.length || Math.random() > 0.5) return;
+    const peer = this.peers[Math.floor(Math.random() * this.peers.length)];
+    const now = Date.now();
+    this.peerPostsStatus(peer, now);
+    pumpSessions(new PeerSession(node), new PeerSession(peer.engine), now);
+    this.notifyUpdate();
+  }
+
+  /**
+   * A high-intensity scan burst (pull-to-refresh): immediately sync fresh
+   * messages from a handful of nearby peers. Resolves when the burst settles.
+   */
+  async boost(): Promise<number> {
+    const node = this.node;
+    if (!node) return 0;
+    const pool = [...this.peers];
+    const k = Math.min(pool.length, 1 + Math.floor(Math.random() * 3));
+    const now = Date.now();
+    for (let i = 0; i < k; i++) {
+      const peer = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+      this.peerPostsStatus(peer, now);
+      pumpSessions(new PeerSession(node), new PeerSession(peer.engine), now);
+    }
+    this.notifyUpdate();
+    await sleep(1100);
+    return k;
   }
 
   stopSession() {
@@ -141,8 +194,7 @@ export class MockTransport implements Transport {
     let peersSeen = 0;
     let elapsed = 0;
     for (const step of steps) {
-      const start = elapsed;
-      const slice = 60;
+      const slice = 60; // ms granularity
       for (let t = 0; t < step.ms; t += slice) {
         if (this.aborted) break;
         await sleep(slice);
@@ -155,14 +207,18 @@ export class MockTransport implements Transport {
             const node2 = updating[peersSeen++];
             this.peerPostsStatus(node2, now);
             pumpSessions(new PeerSession(node), new PeerSession(node2.engine), now);
+            this.notifyUpdate(); // surface new cards live, mid-session
           }
         }
+
+        // Report progress on every tick so the countdown ticks down smoothly
+        // instead of jumping once per phase.
+        onProgress?.({
+          phase: step.phase,
+          fraction: Math.min(1, elapsed / durationMs),
+          peersSeen,
+        });
       }
-      onProgress?.({
-        phase: step.phase,
-        fraction: Math.min(1, (start + step.ms) / durationMs),
-        peersSeen,
-      });
       if (this.aborted) break;
     }
 
@@ -181,6 +237,7 @@ export class MockTransport implements Transport {
       if ((before.get(author) ?? -1) < h.sequence) updatedAuthors.push(author);
     }
 
+    this.notifyUpdate();
     onProgress?.({ phase: 'done', fraction: 1, peersSeen });
     return { updatedAuthors, peersSynced: peersSeen };
   }
