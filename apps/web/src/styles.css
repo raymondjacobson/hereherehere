@@ -329,13 +329,46 @@ footer {
   color: var(--text-secondary);
 }
 
+/* Support: a hand-cut "note" pinned with a clay-heart sticker — the dashed
+   edge echoes the connection paths in the clay scenes. */
 .support {
-  margin-top: 28px;
-  text-align: left;
+  position: relative;
+  margin-top: 44px;
+  padding: 36px 26px 26px;
+  text-align: center;
+  border-radius: 28px;
+  border: 2px dashed rgba(255, 122, 190, 0.5);
+  background:
+    linear-gradient(180deg, rgba(255, 239, 117, 0.16), rgba(125, 235, 255, 0.1)),
+    rgba(255, 255, 255, 0.5);
+}
+
+.support-heart {
+  position: absolute;
+  top: -28px;
+  left: 50%;
+  width: 58px;
+  height: auto;
+  transform: translateX(-50%) rotate(-9deg);
+  filter: drop-shadow(0 7px 14px rgba(255, 122, 190, 0.4));
+}
+
+.support h2 {
+  font-family: var(--font-head);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+.support p {
+  margin: 8px auto 0;
+  max-width: 26em;
+  color: var(--text-secondary);
 }
 
 .support .btn.donate {
-  margin-top: 16px;
+  margin-top: 20px;
 }
 
 .btn.donate,
