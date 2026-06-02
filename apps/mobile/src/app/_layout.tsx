@@ -8,12 +8,16 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
   useFonts,
-  PlusJakartaSans_400Regular,
-  PlusJakartaSans_500Medium,
-  PlusJakartaSans_600SemiBold,
-  PlusJakartaSans_700Bold,
-  PlusJakartaSans_800ExtraBold,
-} from '@expo-google-fonts/plus-jakarta-sans';
+  Quicksand_400Regular,
+  Quicksand_500Medium,
+  Quicksand_600SemiBold,
+  Quicksand_700Bold,
+} from '@expo-google-fonts/quicksand';
+import {
+  DynaPuff_500Medium,
+  DynaPuff_600SemiBold,
+  DynaPuff_700Bold,
+} from '@expo-google-fonts/dynapuff';
 import { palettes } from '@/theme/theme';
 import { useScheme } from '@/theme/useTheme';
 import { useStore } from '@/state/store';
@@ -40,11 +44,15 @@ export default function RootLayout() {
   const scheme = useScheme();
   const hydrated = useStore((s) => s.hydrated);
   const [fontsLoaded] = useFonts({
-    Jakarta_400Regular: PlusJakartaSans_400Regular,
-    Jakarta_500Medium: PlusJakartaSans_500Medium,
-    Jakarta_600SemiBold: PlusJakartaSans_600SemiBold,
-    Jakarta_700Bold: PlusJakartaSans_700Bold,
-    Jakarta_800ExtraBold: PlusJakartaSans_800ExtraBold,
+    // Quicksand — body & UI
+    Quicksand_400Regular,
+    Quicksand_500Medium,
+    Quicksand_600SemiBold,
+    Quicksand_700Bold,
+    // DynaPuff — expressive display headlines
+    DynaPuff_500Medium,
+    DynaPuff_600SemiBold,
+    DynaPuff_700Bold,
   });
 
   const ready = hydrated && fontsLoaded;

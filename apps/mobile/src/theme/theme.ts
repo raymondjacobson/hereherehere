@@ -98,19 +98,27 @@ export const radius = {
   pill: 999,
 } as const;
 
+// Quicksand — readable body & UI (buttons, labels, names, settings, copy).
+// Quicksand tops out at 700, so `extrabold` maps to the bold cut.
 export const fontFamily = {
-  // Plus Jakarta Sans — used throughout.
-  regular: 'Jakarta_400Regular',
-  medium: 'Jakarta_500Medium',
-  semibold: 'Jakarta_600SemiBold',
-  bold: 'Jakarta_700Bold',
-  extrabold: 'Jakarta_800ExtraBold',
+  regular: 'Quicksand_400Regular',
+  medium: 'Quicksand_500Medium',
+  semibold: 'Quicksand_600SemiBold',
+  bold: 'Quicksand_700Bold',
+  extrabold: 'Quicksand_700Bold',
+} as const;
+
+// DynaPuff — soft, handmade display face for expressive headlines only.
+export const displayFamily = {
+  medium: 'DynaPuff_500Medium',
+  semibold: 'DynaPuff_600SemiBold',
+  bold: 'DynaPuff_700Bold',
 } as const;
 
 export const type = {
-  // size / lineHeight pairs
-  hero: { fontSize: 34, lineHeight: 40 },
-  title: { fontSize: 26, lineHeight: 32 },
+  // size / lineHeight pairs (headline line-heights kept compact for DynaPuff)
+  hero: { fontSize: 34, lineHeight: 38 },
+  title: { fontSize: 26, lineHeight: 30 },
   heading: { fontSize: 20, lineHeight: 26 },
   body: { fontSize: 17, lineHeight: 24 },
   callout: { fontSize: 15, lineHeight: 21 },
