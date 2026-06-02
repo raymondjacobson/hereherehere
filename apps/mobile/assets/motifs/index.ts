@@ -19,6 +19,7 @@ export const motifs = {
   bluetooth: require('./bluetooth.png'),
   connect: require('./connect.png'),
   encrypted: require('./encrypted.png'),
+  handshake: require('./handshake.png'),
   heart: require('./heart.png'),
   message: require('./message.png'),
   minus: require('./minus.png'),
