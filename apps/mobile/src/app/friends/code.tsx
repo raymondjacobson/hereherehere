@@ -70,7 +70,7 @@ export default function FriendCodeScreen() {
         </Text>
       </View>
 
-      <View style={{ gap: spacing.sm, paddingBottom: insets.bottom + spacing.md }}>
+      <View style={{ gap: spacing.sm, paddingTop: spacing.xl, paddingBottom: insets.bottom + spacing.md }}>
         <Button title="Scan a friend code" big onPress={() => router.push('/friends/scan')} />
         <Button
           title="Share my link"
