@@ -102,7 +102,7 @@ export const radius = {
 // Quicksand's 400 reads too thin on device, so body text starts at the 500
 // (Medium) cut and the scale shifts up a notch, topping out at the 700 bold.
 export const fontFamily = {
-  regular: 'Quicksand_500Medium',
+  regular: 'Quicksand_600SemiBold',
   medium: 'Quicksand_600SemiBold',
   semibold: 'Quicksand_600SemiBold',
   bold: 'Quicksand_700Bold',
