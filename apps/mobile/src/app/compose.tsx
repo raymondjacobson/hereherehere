@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { type ImageSourcePropType, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { type ImageSourcePropType, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
@@ -122,11 +122,12 @@ export default function ComposeScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView
-          contentContainerStyle={{ paddingTop: insets.top + spacing.xl, padding: spacing.xl, gap: spacing.xl }}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingTop: insets.top + spacing.xl, padding: spacing.xl, gap: spacing.xl }}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
+        showsVerticalScrollIndicator={false}>
           {/* WHERE */}
           <View style={{ gap: spacing.md }}>
             <Text variant="hero" weight="extrabold">
@@ -222,10 +223,10 @@ export default function ComposeScreen() {
           </View>
         </ScrollView>
 
-        <View style={{ paddingHorizontal: spacing.xl, paddingBottom: insets.bottom + spacing.md }}>
+        {/* Fixed to the drawer bottom; the keyboard slides over it (no float). */}
+        <View style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.md, paddingBottom: insets.bottom + spacing.md, backgroundColor: c.bg }}>
           <Button title="Post Message" big onPress={post} disabled={!canPost} />
         </View>
-      </KeyboardAvoidingView>
 
       {/* Time picker */}
       {pickerFor && Platform.OS === 'ios' ? (
