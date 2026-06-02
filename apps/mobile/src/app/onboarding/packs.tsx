@@ -24,7 +24,7 @@ export default function PacksScreen() {
   }
 
   return (
-    <Screen scroll>
+    <Screen scroll glow={false}>
       <View style={{ gap: spacing.sm, marginBottom: spacing.xl }}>
         <Text variant="title" weight="extrabold">
           Event packs

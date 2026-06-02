@@ -14,7 +14,7 @@ export default function AvatarScreen() {
   const setEmoji = useStore((s) => s.setEmoji);
 
   return (
-    <Screen>
+    <Screen glow={false}>
       <View style={{ gap: spacing.md, alignItems: 'center', paddingTop: spacing.md }}>
         <Avatar
           name={identity?.displayName ?? ''}

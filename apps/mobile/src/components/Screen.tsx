@@ -12,12 +12,15 @@ type Props = {
   contentStyle?: ViewStyle;
   /** Reserve no top inset (e.g. when a header already handles it). */
   edges?: { top?: boolean; bottom?: boolean };
+  /** Paint the ambient glow background. Off for flows with edge-faded hero
+   *  images (e.g. onboarding), whose vignettes need a flat bg to blend into. */
+  glow?: boolean;
 };
 
 /**
  * Standard screen container. Warm background, safe-area aware, generous padding.
  */
-export function Screen({ children, scroll, padded = true, contentStyle, edges }: Props) {
+export function Screen({ children, scroll, padded = true, contentStyle, edges, glow = true }: Props) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
   const top = edges?.top === false ? 0 : insets.top;
@@ -32,7 +35,7 @@ export function Screen({ children, scroll, padded = true, contentStyle, edges }:
 
   return (
     <View style={[styles.fill, { backgroundColor: c.bg }]}>
-      <Glow />
+      {glow ? <Glow /> : null}
       {scroll ? (
         <ScrollView
           style={styles.fill}
