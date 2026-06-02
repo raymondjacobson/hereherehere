@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, FlatList, Pressable, useWindowDimensions, View } from 'react-native';
+import { Animated, Easing, FlatList, LayoutAnimation, Pressable, useWindowDimensions, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,6 +20,8 @@ import { motifs } from '@/assets/motifs';
 
 /** Pull distance (pts) past which releasing triggers a refresh boost. */
 const PULL = 72;
+/** Height of the gap held open at the top while a refresh is spinning. */
+const REFRESH_GAP = 84;
 
 /**
  * Top-left live status: how many phones we're hearing nearby. Always on while
@@ -63,8 +65,10 @@ export default function BoardScreen() {
   const triggerRefresh = useCallback(async () => {
     if (refreshingRef.current) return;
     refreshingRef.current = true;
-    setRefreshing(true);
     spin.setValue(0);
+    // Animate the gap open and keep it held down while the motif spins.
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setRefreshing(true);
     const loop = Animated.loop(
       Animated.timing(spin, { toValue: 1, duration: 900, easing: Easing.linear, useNativeDriver: false }),
     );
@@ -72,6 +76,7 @@ export default function BoardScreen() {
     await boost();
     loop.stop();
     refreshingRef.current = false;
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setRefreshing(false);
   }, [boost, spin]);
 
@@ -233,7 +238,7 @@ export default function BoardScreen() {
         )}
         ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
         contentContainerStyle={{
-          paddingTop: insets.top + spacing.md,
+          paddingTop: insets.top + spacing.md + (refreshing ? REFRESH_GAP : 0),
           paddingHorizontal: spacing.xl,
           paddingBottom: insets.bottom + 130,
         }}
@@ -254,7 +259,7 @@ export default function BoardScreen() {
         pointerEvents="none"
         style={{
           position: 'absolute',
-          top: insets.top + 2,
+          top: insets.top + spacing.md + (REFRESH_GAP - 48) / 2,
           left: 0,
           right: 0,
           alignItems: 'center',
@@ -265,7 +270,7 @@ export default function BoardScreen() {
             { rotate: refreshing ? spinRotate : pullRotate },
           ],
         }}>
-        <Image source={motifs.refresh} style={{ width: 44, height: 44 }} contentFit="contain" />
+        <Image source={motifs.refresh} style={{ width: 48, height: 48 }} contentFit="contain" />
       </Animated.View>
 
       {/* Floating Post action — pull down to boost the crowd refresh */}
