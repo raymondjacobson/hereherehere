@@ -24,6 +24,17 @@ export function windowLabel(startsAt: number, endsAt: number, now: number): stri
   return `${start} → ${clockTime(endsAt)}`;
 }
 
+/** "15m left" / "1h 5m left" / "2h left" — for an active window. */
+export function timeLeftLabel(endsAt: number, now: number): string {
+  const ms = endsAt - now;
+  if (ms <= 0) return 'ended';
+  const mins = Math.ceil(ms / MIN);
+  if (mins < 60) return `${mins}m left`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m === 0 ? `${h}h left` : `${h}h ${m}m left`;
+}
+
 /** "Posted 8:32 PM · received 8:39 PM" — receivedAt optional. */
 export function provenanceLabel(createdAt: number, receivedAt?: number): string {
   const posted = `Posted ${clockTime(createdAt)}`;
