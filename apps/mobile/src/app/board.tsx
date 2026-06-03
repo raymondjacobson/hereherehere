@@ -58,10 +58,7 @@ function StatusPill({ nearby, sent, rec }: { nearby: number; sent: number; rec: 
         Nearby {nearby}
       </Text>
       <Text variant="meta" weight="semibold" color="textTertiary">
-        • sent {sent}
-      </Text>
-      <Text variant="meta" weight="semibold" color="textTertiary">
-        • rec {rec}
+        • sent {sent} / rec {rec}
       </Text>
     </View>
   );
