@@ -43,6 +43,9 @@ export class MeshEngine {
   /** receipts addressed to us, keyed by the status they acknowledge. */
   readonly receiptsForMe = new Map<string, DeliveryReceipt>();
   private receiptSeq = 1;
+  /** Foreign 'here' messages we've blind-relayed (can't read) since the last
+   *  drain — the store folds these into an all-time "sent through you" total. */
+  private relaySession = 0;
 
   constructor(
     private readonly identity: LocalIdentity & Secrets,
@@ -136,6 +139,12 @@ export class MeshEngine {
 
     const outcome: IngestOutcome = { status: here ? 'new-status' : 'cached' };
 
+    // A foreign status we're carrying for someone else (can't read) — the core
+    // "messages you're helping send" signal.
+    if (outcome.status === 'cached' && envelope.objectType === 'here' && envelope.senderSignPk !== this.identity.signPk) {
+      this.relaySession += 1;
+    }
+
     if (here) {
       const cur = this.heres.get(here.authorId);
       if (isNewer(here, cur ?? null)) {
@@ -160,6 +169,29 @@ export class MeshEngine {
     }
 
     return outcome;
+  }
+
+  /** Number of foreign 'here' messages blind-relayed since the last call; resets
+   *  the session counter. The store accumulates these into an all-time total. */
+  drainRelayed(): number {
+    const n = this.relaySession;
+    this.relaySession = 0;
+    return n;
+  }
+
+  /** How many foreign messages (not ours, not decryptable) we're carrying for
+   *  the crowd right now — the live "sent N" indicator on the board. */
+  carryingForOthers(now: number): number {
+    let n = 0;
+    for (const m of this.cache.all()) {
+      if (m.envelope.objectType !== 'here') continue;
+      if (m.decryptable) continue;
+      if (m.superseded) continue;
+      if (m.envelope.senderSignPk === this.identity.signPk) continue;
+      if (!isLive(m.envelope, now)) continue;
+      n += 1;
+    }
+    return n;
   }
 
   private openHere(envelope: Envelope): Here | null {

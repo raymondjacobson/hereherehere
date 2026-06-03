@@ -18,6 +18,9 @@ import { defaultEmojiFor } from '@/data/emoji';
 import { transport } from '@/transport';
 import type { TransportDebug } from '@/transport/types';
 import Constants from 'expo-constants';
+import { Image } from 'expo-image';
+import { getEngine } from '@/state/engine';
+import { motifs } from '@/assets/motifs';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -60,6 +63,39 @@ function BleDebug() {
           </View>
         ))}
       </View>
+    </Card>
+  );
+}
+
+/** "Messages you're helping send" — your blind-relay contribution to the crowd. */
+function ImpactCard() {
+  const sent = useStore((s) => s.meshSent);
+  const [carrying, setCarrying] = useState(() => getEngine()?.carryingForOthers(Date.now()) ?? 0);
+  useEffect(() => {
+    const id = setInterval(() => setCarrying(getEngine()?.carryingForOthers(Date.now()) ?? 0), 1500);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <Card>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.lg }}>
+        <Image source={motifs.message} style={{ width: 52, height: 52 }} contentFit="contain" />
+        <View style={{ flex: 1 }}>
+          <Text variant="hero" weight="extrabold">
+            {sent.toLocaleString()}
+          </Text>
+          <Text variant="callout" weight="semibold" color="textSecondary">
+            messages sent through you
+          </Text>
+        </View>
+      </View>
+      <Text variant="callout" color="textSecondary" style={{ marginTop: spacing.md }}>
+        {sent === 0
+          ? 'When you’re near other phones, hereherehere quietly carries the crowd’s encrypted messages onward — even ones you can’t read. Your count grows here.'
+          : `You’ve helped carry ${sent.toLocaleString()} encrypted message${sent === 1 ? '' : 's'} for people you may never meet${
+              carrying > 0 ? `, ${carrying} moving through you right now` : ''
+            }. You can’t read them — that’s the point.`}
+      </Text>
     </Card>
   );
 }
@@ -151,6 +187,10 @@ export default function SettingsScreen() {
             </View>
           </Card>
           {emojiOpen ? <EmojiPicker value={identity?.emoji} onSelect={setEmoji} tile={44} /> : null}
+        </Section>
+
+        <Section title="Your impact">
+          <ImpactCard />
         </Section>
 
         <Section title="Friends">

@@ -9,7 +9,7 @@ import type { EventPack, Friend, FriendCodePayload, Here, LocalIdentity } from '
 import { mockTransport } from '@/transport/mock';
 import { transport, isSimulatedTransport } from '@/transport';
 import { generatePeers, loadPeers, savePeers, clearPeers } from '@/transport/syntheticPeers';
-import { seedDemoStatuses } from '@/transport/demoSeed';
+import { seedDemoStatuses, seedRelayTraffic } from '@/transport/demoSeed';
 import { clearEngine, createEngine, getEngine } from './engine';
 import { loadSecrets, storeSecrets, clearSecrets } from './secrets';
 
@@ -25,6 +25,10 @@ type AppState = {
   /** latest here per author id (includes self under identity.signPk) */
   heres: Record<string, HereRecord>;
   installedPacks: EventPack[];
+
+  /** All-time count of foreign messages we've blind-relayed for the crowd
+   *  ("sent through you"); persists until Reset everything. */
+  meshSent: number;
 
   // permissions (cached for display; the OS stays source of truth for notifications)
   bluetoothEnabled: boolean;
@@ -92,6 +96,7 @@ export const useStore = create<AppState>()(
       friends: [],
       heres: {},
       installedPacks: [],
+      meshSent: 0,
       bluetoothEnabled: false,
       notificationsEnabled: false,
       permissionsPrompted: false,
@@ -218,7 +223,12 @@ export const useStore = create<AppState>()(
 
       syncFromEngine: () => {
         const engine = getEngine();
-        if (engine) set({ heres: mergeHeres(get().heres, engine) });
+        if (!engine) return;
+        const relayed = engine.drainRelayed();
+        set((s) => ({
+          heres: mergeHeres(s.heres, engine),
+          meshSent: s.meshSent + relayed,
+        }));
       },
 
       installPack: (pack) => {
@@ -252,7 +262,12 @@ export const useStore = create<AppState>()(
           // there are none, so seed one fresh status each so they still appear.
           if (isSimulatedTransport) mockTransport.setPeers(peers, engine.asFriend());
           seedDemoStatuses(engine, engine.asFriend(), peers, now);
-          set({ heres: mergeHeres(get().heres, engine) });
+          // Also seed the crowd's blind-relay traffic so the "sent through you"
+          // counters come alive (real plumbing, simulated volume). The ingests
+          // bump the engine's relay counter; drain it to fold into the total.
+          seedRelayTraffic(engine, peers, now);
+          const carried = engine.drainRelayed();
+          set((s) => ({ heres: mergeHeres(s.heres, engine), meshSent: s.meshSent + carried }));
         }
       },
 
@@ -266,6 +281,7 @@ export const useStore = create<AppState>()(
           friends: [],
           heres: {},
           installedPacks: [],
+          meshSent: 0,
           bluetoothEnabled: false,
           notificationsEnabled: false,
           permissionsPrompted: false,
@@ -281,6 +297,7 @@ export const useStore = create<AppState>()(
         friends: s.friends,
         heres: s.heres,
         installedPacks: s.installedPacks,
+        meshSent: s.meshSent,
         bluetoothEnabled: s.bluetoothEnabled,
         notificationsEnabled: s.notificationsEnabled,
         permissionsPrompted: s.permissionsPrompted,

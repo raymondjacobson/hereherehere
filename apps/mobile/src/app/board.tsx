@@ -25,7 +25,7 @@ const PULL = 90;
  * Top-left live status: how many phones we're hearing nearby. Always on while
  * the board is open — friends' messages arrive on their own; pull down to boost.
  */
-function StatusPill({ nearby }: { nearby: number }) {
+function StatusPill({ nearby, carrying }: { nearby: number; carrying: number }) {
   const { c } = useTheme();
   const active = nearby > 0;
   const pulse = useRef(new Animated.Value(0.45)).current;
@@ -75,6 +75,11 @@ function StatusPill({ nearby }: { nearby: number }) {
       <Text variant="meta" weight="semibold" color={searching ? 'accent' : active ? 'text' : 'textSecondary'}>
         {label}
       </Text>
+      {carrying > 0 ? (
+        <Text variant="meta" weight="semibold" color="textTertiary">
+          · sent {carrying}
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -91,7 +96,7 @@ export default function BoardScreen() {
   const heres = useStore((s) => s.heres);
   const [showQuiet, setShowQuiet] = useState(false);
   // Live sync: friends' messages arrive on their own while the board is open.
-  const { nearby, boost } = useLiveSync();
+  const { nearby, carrying, boost } = useLiveSync();
 
   // Custom pull-to-refresh: the refresh motif winds as you pull, then spins
   // while a boost is in flight.
@@ -174,7 +179,7 @@ export default function BoardScreen() {
           <Text variant="title" weight="extrabold">
             hereherehere
           </Text>
-          <StatusPill nearby={nearby} />
+          <StatusPill nearby={nearby} carrying={carrying} />
         </View>
         <View style={{ flexDirection: 'row', gap: spacing.md }}>
           <MotifButton glass motif={motifs.connect} accessibilityLabel="Friend code" onPress={() => router.push('/friends/code')} />
