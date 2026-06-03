@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { View } from 'react-native';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Screen } from '@/components/Screen';
 import { Text } from '@/components/Text';
@@ -8,6 +9,7 @@ import { Avatar } from '@/components/Avatar';
 import { spacing } from '@/theme/theme';
 import { useStore } from '@/state/store';
 import { fingerprint } from '@/crypto/keys';
+import { motifs } from '@/assets/motifs';
 import type { FriendCodePayload } from '@/domain/types';
 
 export default function AddFriendScreen() {
@@ -51,7 +53,7 @@ export default function AddFriendScreen() {
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: spacing.lg }}>
         {added ? (
           <>
-            <Text style={{ fontSize: 56 }}>🤝</Text>
+            <Image source={motifs.handshake} style={{ width: 96, height: 96 }} contentFit="contain" />
             <Text variant="title" weight="extrabold" center>
               {params.n} added
             </Text>
