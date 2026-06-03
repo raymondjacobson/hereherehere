@@ -148,14 +148,19 @@ export default function ComposeScreen() {
               placeholder="a stage, a landmark, anywhere"
               returnKeyType="done"
             />
-            {/* Quick hits (top matches) + a "More" chip into the full picker. */}
+            {/* Quick hits scroll horizontally; "More…" opens the full picker. */}
             {allSuggestions.length > 0 ? (
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-                {suggestions.slice(0, 4).map((s) => (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                keyboardShouldPersistTaps="always"
+                keyboardDismissMode="none"
+                contentContainerStyle={{ gap: spacing.sm, paddingVertical: 2 }}>
+                {suggestions.map((s) => (
                   <Chip key={s.key} label={s.label} onPress={() => pickSuggestion(s.label, s.setEndsAt)} />
                 ))}
                 <Chip label="More…" onPress={() => setPickerOpen(true)} />
-              </View>
+              </ScrollView>
             ) : null}
           </View>
 

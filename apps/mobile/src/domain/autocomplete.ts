@@ -17,8 +17,10 @@ export function buildSuggestions(packs: EventPack[]): Suggestion[] {
       const stage = stageById.get(set.stagePlaceId) ?? '';
       out.push({
         key: `set:${pack.id}:${set.id}`,
-        label: `${set.artist}${stage ? ` @ ${stage}` : ''}`,
-        sublabel: 'set',
+        // Artist only — keeps chips short; the stage stays as a subtle sublabel
+        // (shown in the full picker, still searchable).
+        label: set.artist,
+        sublabel: stage || 'set',
         setEndsAt: set.endsAt,
         kind: 'set',
       });
