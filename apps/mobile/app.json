@@ -8,7 +8,7 @@
     "scheme": "hereherehere",
     "userInterfaceStyle": "light",
     "ios": {
-      "bundleIdentifier": "app.hereherehere",
+      "bundleIdentifier": "app.hereherehere.ios",
       "supportsTablet": true,
       "infoPlist": {
         "NSBluetoothAlwaysUsageDescription": "hereherehere uses Bluetooth to pass messages between nearby phones when there’s no signal. It never tracks your location.",
