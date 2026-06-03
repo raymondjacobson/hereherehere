@@ -321,18 +321,34 @@ footer {
 }
 
 .btn.store.disabled {
-  /* "Coming soon" — non-navigating, but kept colorful per the rave theme.
-     The COMING SOON label communicates status. */
+  /* Full store release is "coming soon" — dim the buttons so it reads as
+     not-yet-live (the TestFlight beta link sits below). */
   cursor: pointer;
+  opacity: 0.55;
+  filter: grayscale(0.4);
 }
 
 .coming-soon {
-  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-top: 12px;
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--text-secondary);
+}
+
+.coming-soon .tf-link {
+  color: var(--accent);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.coming-soon .tf-link:hover {
+  text-decoration: underline;
 }
 
 /* Support: a hand-cut "note" pinned with a clay-heart sticker — the dashed
