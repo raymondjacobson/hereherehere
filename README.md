@@ -58,7 +58,7 @@ Deployed to `hereherehere.app` (Cloudflare Pages).
 
 ## Privacy
 
-No account, no phone number, no backend, no GPS. Private keys live only on-device. Friends you add can read your heres; other phones can only carry them — they can't read them.
+No account, no phone number, no backend, no GPS. Private keys live only on-device. Only friends you add can read your messages; other phones can only carry them.
 
 ## Support
 
