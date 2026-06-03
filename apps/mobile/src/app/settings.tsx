@@ -17,6 +17,7 @@ import { PERMISSIONS } from '@/permissions/catalog';
 import { defaultEmojiFor } from '@/data/emoji';
 import { transport } from '@/transport';
 import type { TransportDebug } from '@/transport/types';
+import Constants from 'expo-constants';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -83,6 +84,8 @@ export default function SettingsScreen() {
   const [emojiOpen, setEmojiOpen] = useState(false);
 
   const currentGlyph = identity?.emoji?.trim() || (identity?.signPk ? defaultEmojiFor(identity.signPk) : '🙂');
+  const appVersion = Constants.expoConfig?.version ?? '1.0.0';
+  const buildVersion = Constants.expoConfig?.ios?.buildNumber ?? '';
 
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
@@ -151,12 +154,25 @@ export default function SettingsScreen() {
         </Section>
 
         <Section title="Friends">
+          <Card onPress={() => router.push('/friends/list')}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text variant="body" weight="semibold">
+                {friends.length} friend{friends.length === 1 ? '' : 's'}
+              </Text>
+              <Text variant="callout" weight="bold" color="accent">
+                Manage
+              </Text>
+            </View>
+            <Text variant="callout" color="textSecondary" style={{ marginTop: 2 }}>
+              View, add, or remove friends
+            </Text>
+          </Card>
           <Card onPress={() => router.push('/friends/code')}>
             <Text variant="body" weight="semibold">
-              {friends.length} friend{friends.length === 1 ? '' : 's'}
+              My friend code
             </Text>
             <Text variant="callout" color="textSecondary" style={{ marginTop: 2 }}>
-              Tap to show your friend code or scan one
+              Show your code or scan one to add each other
             </Text>
           </Card>
         </Section>
@@ -226,6 +242,10 @@ export default function SettingsScreen() {
             router.replace('/');
           }}
         />
+
+        <Text variant="meta" color="textTertiary" center style={{ marginTop: spacing.sm }}>
+          hereherehere v{appVersion}{buildVersion ? ` (${buildVersion})` : ''}
+        </Text>
       </ScrollView>
     </View>
   );

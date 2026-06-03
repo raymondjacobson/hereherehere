@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View } from 'react-native';
+import { Linking, View } from 'react-native';
 import { Text } from './Text';
 import { Button } from './Button';
 import { ImageHero } from './ImageHero';
@@ -42,14 +42,22 @@ export function PermissionItem({ info, imageSize }: { info: PermissionInfo; imag
           {info.body}
         </Text>
       </View>
-      <Button
-        title={granted ? 'Allowed ✓' : info.cta}
-        variant={granted ? 'secondary' : 'primary'}
-        disabled={granted}
-        loading={busy}
-        onPress={onAllow}
-        style={{ alignSelf: 'stretch' }}
-      />
+      {granted ? (
+        <Button
+          title="Allowed ✓ · Manage in Settings"
+          variant="secondary"
+          onPress={() => Linking.openSettings()}
+          style={{ alignSelf: 'stretch' }}
+        />
+      ) : (
+        <Button
+          title={info.cta}
+          variant="primary"
+          loading={busy}
+          onPress={onAllow}
+          style={{ alignSelf: 'stretch' }}
+        />
+      )}
     </View>
   );
 }

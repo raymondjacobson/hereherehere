@@ -19,6 +19,9 @@ import { motifs } from '@/assets/motifs';
 
 const STEP = 5 * MIN; // fine-tune step for the −/+ buttons
 const MIN_DURATION = 5 * MIN;
+// Cap the window so a far-future suggestion (e.g. a festival set scheduled
+// months out) can't set an absurd end time — that produced "expires in 2000h".
+const MAX_DURATION = 12 * HOUR;
 const DURATIONS = [10, 20, 30, 45, 60]; // minutes, for the "For" pills
 type PickerTarget = 'start' | 'end' | null;
 
@@ -35,6 +38,7 @@ export default function ComposeScreen() {
   const [startsAt, setStartsAt] = useState(() => Date.now());
   const [endsAt, setEndsAt] = useState(() => Date.now() + HOUR);
   const [pickerFor, setPickerFor] = useState<PickerTarget>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [posted, setPosted] = useState(false);
 
   const allSuggestions = useMemo(() => buildSuggestions(installedPacks), [installedPacks]);
@@ -56,7 +60,11 @@ export default function ComposeScreen() {
   }
   // Stepping End changes the duration (Start fixed).
   function adjustEnd(deltaMs: number) {
-    setEndsAt((prev) => Math.max(startsAt + MIN_DURATION, prev + deltaMs));
+    setEndsAt((prev) => clampEnd(prev + deltaMs));
+  }
+  // Keep the window within [MIN_DURATION, MAX_DURATION] of the start.
+  function clampEnd(end: number): number {
+    return Math.min(startsAt + MAX_DURATION, Math.max(startsAt + MIN_DURATION, end));
   }
   // A "For" pill sets the duration; End updates.
   function setDuration(min: number) {
@@ -65,7 +73,8 @@ export default function ComposeScreen() {
 
   function pickSuggestion(label: string, setEnd?: number) {
     setWhereText(label);
-    if (setEnd && setEnd > startsAt) setEndsAt(setEnd);
+    if (setEnd && setEnd > startsAt) setEndsAt(clampEnd(setEnd));
+    setPickerOpen(false);
   }
 
   function onPickerChange(event: DateTimePickerEvent, date?: Date) {
@@ -80,7 +89,7 @@ export default function ComposeScreen() {
     } else if (pickerFor === 'end') {
       let n = t;
       if (n <= startsAt) n += DAY; // crossed midnight
-      setEndsAt(Math.max(startsAt + MIN_DURATION, n));
+      setEndsAt(clampEnd(n));
     }
   }
 
@@ -139,17 +148,14 @@ export default function ComposeScreen() {
               placeholder="a stage, a landmark, anywhere"
               returnKeyType="done"
             />
-            {suggestions.length > 0 ? (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                keyboardShouldPersistTaps="always"
-                keyboardDismissMode="none"
-                contentContainerStyle={{ gap: spacing.sm, paddingVertical: 2 }}>
-                {suggestions.map((s) => (
+            {/* Quick hits (top matches) + a "More" chip into the full picker. */}
+            {allSuggestions.length > 0 ? (
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+                {suggestions.slice(0, 4).map((s) => (
                   <Chip key={s.key} label={s.label} onPress={() => pickSuggestion(s.label, s.setEndsAt)} />
                 ))}
-              </ScrollView>
+                <Chip label="More…" onPress={() => setPickerOpen(true)} />
+              </View>
             ) : null}
           </View>
 
@@ -224,6 +230,67 @@ export default function ComposeScreen() {
         <View style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.md, paddingBottom: insets.bottom + spacing.md, backgroundColor: c.bg }}>
           <Button title="Post Message" big onPress={post} disabled={!canPost} />
         </View>
+
+      {/* Full-height location picker — browse all prelisted sets & places */}
+      {pickerOpen ? (
+        <Pressable
+          onPress={() => setPickerOpen(false)}
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#0006', justifyContent: 'flex-end' }}>
+          <Pressable
+            onPress={(e) => e.stopPropagation()}
+            style={{ maxHeight: '85%', backgroundColor: c.surface, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: spacing.lg }}>
+              <Text variant="heading" weight="bold">
+                Pick a spot
+              </Text>
+              <Pressable onPress={() => setPickerOpen(false)} hitSlop={12}>
+                <Text variant="body" weight="bold" color="accent">
+                  Done
+                </Text>
+              </Pressable>
+            </View>
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: insets.bottom + spacing.xl }}
+              showsVerticalScrollIndicator={false}>
+              {(['set', 'place'] as const).map((kind) => {
+                const items = allSuggestions.filter((s) => s.kind === kind);
+                if (!items.length) return null;
+                return (
+                  <View key={kind} style={{ gap: 2 }}>
+                    <Text variant="meta" weight="bold" color="textSecondary" style={{ marginTop: spacing.md, marginBottom: spacing.xs }}>
+                      {kind === 'set' ? 'SETS' : 'PLACES'}
+                    </Text>
+                    {items.map((s) => (
+                      <Pressable
+                        key={s.key}
+                        onPress={() => pickSuggestion(s.label, s.setEndsAt)}
+                        style={({ pressed }) => ({
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          paddingVertical: spacing.md,
+                          paddingHorizontal: spacing.sm,
+                          borderRadius: radius.md,
+                          backgroundColor: pressed ? c.surfaceAlt : 'transparent',
+                        })}>
+                        <Text variant="body" weight="semibold" numberOfLines={1} style={{ flex: 1 }}>
+                          {s.label}
+                        </Text>
+                        {s.sublabel ? (
+                          <Text variant="meta" color="textTertiary" style={{ marginLeft: spacing.md }}>
+                            {s.sublabel}
+                          </Text>
+                        ) : null}
+                      </Pressable>
+                    ))}
+                  </View>
+                );
+              })}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      ) : null}
 
       {/* Time picker */}
       {pickerFor && Platform.OS === 'ios' ? (

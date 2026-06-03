@@ -9,6 +9,7 @@ import type { EventPack, Friend, FriendCodePayload, Here, LocalIdentity } from '
 import { mockTransport } from '@/transport/mock';
 import { transport, isSimulatedTransport } from '@/transport';
 import { generatePeers, loadPeers, savePeers, clearPeers } from '@/transport/syntheticPeers';
+import { seedDemoStatuses } from '@/transport/demoSeed';
 import { clearEngine, createEngine, getEngine } from './engine';
 import { loadSecrets, storeSecrets, clearSecrets } from './secrets';
 
@@ -245,8 +246,14 @@ export const useStore = create<AppState>()(
         const friends = [...get().friends, ...newFriends.filter((f) => !existingIds.has(f.id))];
         set({ friends });
         const engine = getEngine();
-        engine?.setFriends(friends);
-        if (engine && isSimulatedTransport) mockTransport.setPeers(peers, engine.asFriend());
+        if (engine) {
+          engine.setFriends(friends);
+          // Simulated transport keeps these peers updating live; in BLE mode
+          // there are none, so seed one fresh status each so they still appear.
+          if (isSimulatedTransport) mockTransport.setPeers(peers, engine.asFriend());
+          seedDemoStatuses(engine, engine.asFriend(), peers, now);
+          set({ heres: mergeHeres(get().heres, engine) });
+        }
       },
 
       resetAll: async () => {

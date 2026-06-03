@@ -28,11 +28,52 @@ const PULL = 90;
 function StatusPill({ nearby }: { nearby: number }) {
   const { c } = useTheme();
   const active = nearby > 0;
+  const pulse = useRef(new Animated.Value(0.45)).current;
+  const [searching, setSearching] = useState(false);
+
+  // Always-on "live" pulse so the radio reads as active even at rest.
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 850, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0.45, duration: 850, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [pulse]);
+
+  // Periodic "searching" burst — demonstrates the Bluetooth radio sweeping for
+  // peers (cosmetic; the real transport scans continuously).
+  useEffect(() => {
+    let off: ReturnType<typeof setTimeout>;
+    const id = setInterval(() => {
+      setSearching(true);
+      off = setTimeout(() => setSearching(false), 2600);
+    }, 11000);
+    return () => {
+      clearInterval(id);
+      clearTimeout(off);
+    };
+  }, []);
+
+  const dotColor = searching ? c.accent : active ? c.success : c.textTertiary;
+  const label = searching ? 'Searching nearby…' : active ? `${nearby} nearby` : 'Listening nearby…';
+
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.sm }}>
-      <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: active ? c.success : c.textTertiary }} />
-      <Text variant="meta" weight="semibold" color={active ? 'text' : 'textSecondary'}>
-        {active ? `${nearby} nearby` : 'Looking nearby…'}
+      <Animated.View
+        style={{
+          width: 8,
+          height: 8,
+          borderRadius: 4,
+          backgroundColor: dotColor,
+          opacity: pulse,
+          transform: [{ scale: searching ? 1.2 : 1 }],
+        }}
+      />
+      <Text variant="meta" weight="semibold" color={searching ? 'accent' : active ? 'text' : 'textSecondary'}>
+        {label}
       </Text>
     </View>
   );
