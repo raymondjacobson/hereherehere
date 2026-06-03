@@ -22,14 +22,14 @@ import { motifs } from '@/assets/motifs';
 const PULL = 90;
 
 /**
- * Top-left live status: how many phones we're hearing nearby. Always on while
- * the board is open — friends' messages arrive on their own; pull down to boost.
+ * Top-left live status: a compact readout of mesh activity — phones nearby,
+ * messages we're relaying (sent), and messages we've received (rec). The dot
+ * pulses always and turns pink the moment any number is non-zero.
  */
-function StatusPill({ nearby, carrying }: { nearby: number; carrying: number }) {
+function StatusPill({ nearby, sent, rec }: { nearby: number; sent: number; rec: number }) {
   const { c } = useTheme();
-  const active = nearby > 0;
+  const anyNonzero = nearby > 0 || sent > 0 || rec > 0;
   const pulse = useRef(new Animated.Value(0.45)).current;
-  const [searching, setSearching] = useState(false);
 
   // Always-on "live" pulse so the radio reads as active even at rest.
   useEffect(() => {
@@ -43,23 +43,6 @@ function StatusPill({ nearby, carrying }: { nearby: number; carrying: number }) 
     return () => loop.stop();
   }, [pulse]);
 
-  // Periodic "searching" burst — demonstrates the Bluetooth radio sweeping for
-  // peers (cosmetic; the real transport scans continuously).
-  useEffect(() => {
-    let off: ReturnType<typeof setTimeout>;
-    const id = setInterval(() => {
-      setSearching(true);
-      off = setTimeout(() => setSearching(false), 2600);
-    }, 11000);
-    return () => {
-      clearInterval(id);
-      clearTimeout(off);
-    };
-  }, []);
-
-  const dotColor = searching ? c.accent : active ? c.success : c.textTertiary;
-  const label = searching ? 'Searching nearby…' : active ? `${nearby} nearby` : 'Listening nearby…';
-
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.sm }}>
       <Animated.View
@@ -67,19 +50,19 @@ function StatusPill({ nearby, carrying }: { nearby: number; carrying: number }) 
           width: 8,
           height: 8,
           borderRadius: 4,
-          backgroundColor: dotColor,
+          backgroundColor: anyNonzero ? c.accent : c.textTertiary,
           opacity: pulse,
-          transform: [{ scale: searching ? 1.2 : 1 }],
         }}
       />
-      <Text variant="meta" weight="semibold" color={searching ? 'accent' : active ? 'text' : 'textSecondary'}>
-        {label}
+      <Text variant="meta" weight="semibold" color={nearby > 0 ? 'accent' : 'textSecondary'}>
+        Nearby {nearby}
       </Text>
-      {carrying > 0 ? (
-        <Text variant="meta" weight="semibold" color="textTertiary">
-          · sent {carrying}
-        </Text>
-      ) : null}
+      <Text variant="meta" weight="semibold" color="textTertiary">
+        • sent {sent}
+      </Text>
+      <Text variant="meta" weight="semibold" color="textTertiary">
+        • rec {rec}
+      </Text>
     </View>
   );
 }
@@ -97,6 +80,8 @@ export default function BoardScreen() {
   const [showQuiet, setShowQuiet] = useState(false);
   // Live sync: friends' messages arrive on their own while the board is open.
   const { nearby, carrying, boost } = useLiveSync();
+  // Received: decrypted messages we hold from friends (everyone but ourselves).
+  const rec = useMemo(() => Object.keys(heres).filter((k) => k !== identity?.signPk).length, [heres, identity]);
 
   // Custom pull-to-refresh: the refresh motif winds as you pull, then spins
   // while a boost is in flight.
@@ -179,7 +164,7 @@ export default function BoardScreen() {
           <Text variant="title" weight="extrabold">
             hereherehere
           </Text>
-          <StatusPill nearby={nearby} carrying={carrying} />
+          <StatusPill nearby={nearby} sent={carrying} rec={rec} />
         </View>
         <View style={{ flexDirection: 'row', gap: spacing.md }}>
           <MotifButton glass motif={motifs.connect} accessibilityLabel="Friend code" onPress={() => router.push('/friends/code')} />
@@ -204,7 +189,7 @@ export default function BoardScreen() {
       ) : (
         <Card onPress={() => router.push('/compose')} muted>
           <Text variant="heading" weight="bold">
-            Post your first message
+            Send your first message
           </Text>
           <Text variant="callout" color="textSecondary" style={{ marginTop: spacing.xs }}>
             Tell your friends where you’ll be and until when.
