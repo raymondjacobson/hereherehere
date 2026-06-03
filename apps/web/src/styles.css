@@ -482,3 +482,58 @@ footer .built {
   margin-left: auto;
   margin-right: auto;
 }
+
+/* --- Doc pages (privacy, support) --- */
+
+.doc .updated {
+  color: var(--text-tertiary);
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.doc h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin-top: 28px;
+}
+
+.doc p {
+  color: var(--text-secondary);
+  font-size: 16px;
+  line-height: 1.55;
+  margin-top: 10px;
+}
+
+.doc .lede {
+  color: var(--text-secondary);
+  margin-top: 16px;
+}
+
+.doc a {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.doc a:hover {
+  text-decoration: underline;
+}
+
+.doc code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9em;
+  background: rgba(255, 122, 190, 0.12);
+  padding: 1px 5px;
+  border-radius: 6px;
+}
+
+/* On doc pages the support note isn't a hero callout — keep its heading readable. */
+.doc .support h2 {
+  font-family: var(--font-head);
+  margin-top: 0;
+}
+
+.doc .support .btn.donate {
+  margin-top: 18px;
+}

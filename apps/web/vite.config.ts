@@ -9,6 +9,8 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'index.html'),
         how: resolve(__dirname, 'how/index.html'),
+        privacy: resolve(__dirname, 'privacy/index.html'),
+        support: resolve(__dirname, 'support/index.html'),
         friend: resolve(__dirname, 'friend/index.html'),
       },
     },
