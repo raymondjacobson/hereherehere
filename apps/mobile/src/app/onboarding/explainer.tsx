@@ -29,7 +29,7 @@ const PAGES: Page[] = [
   {
     image: require('../../../assets/onboarding/refresh-crowd.png'),
     title: 'Open to broadcast',
-    body: 'Phones can only pass messages while the app is open. During your event, we’ll remind everyone around the same time to open hereherehere for a quick crowd refresh.',
+    body: 'Phones can only pass messages while the app is open. During an event, we’ll remind everyone around the same time to open hereherehere for a quick crowd refresh.',
   },
 ];
 

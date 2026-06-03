@@ -38,7 +38,7 @@ export default function NameScreen() {
               What should your friends call you?
             </Text>
             <Text variant="body" color="textSecondary">
-              No account, no phone number. This name just helps your friends recognize you.
+              This name helps your friends find you. No account needed.
             </Text>
           </View>
           <TextField

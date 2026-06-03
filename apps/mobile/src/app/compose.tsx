@@ -233,7 +233,7 @@ export default function ComposeScreen() {
 
         {/* Fixed to the drawer bottom; the keyboard slides over it (no float). */}
         <View style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.md, paddingBottom: insets.bottom + spacing.md, backgroundColor: c.bg }}>
-          <Button title="Post Message" big onPress={post} disabled={!canPost} />
+          <Button title="Send Message" big onPress={post} disabled={!canPost} />
         </View>
 
       {/* Full-height location picker — browse all prelisted sets & places */}

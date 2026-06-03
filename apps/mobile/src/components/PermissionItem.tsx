@@ -44,7 +44,7 @@ export function PermissionItem({ info, imageSize }: { info: PermissionInfo; imag
       </View>
       {granted ? (
         <Button
-          title="Allowed ✓ · Manage in Settings"
+          title="Allowed ✓"
           variant="secondary"
           onPress={() => Linking.openSettings()}
           style={{ alignSelf: 'stretch' }}

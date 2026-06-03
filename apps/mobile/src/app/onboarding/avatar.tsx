@@ -27,7 +27,7 @@ export default function AvatarScreen() {
           Pick your emoji
         </Text>
         <Text variant="body" color="textSecondary" center>
-          This is how friends will spot you on the board. You can change it anytime.
+          This helps your friends easily spot you. You can change it anytime.
         </Text>
       </View>
 
