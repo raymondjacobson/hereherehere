@@ -12,7 +12,7 @@
 
 [hereherehere.app](hereherehere.app)
 
-Post where you'll be and until when. Your phone carries it through the crowd, like a message in a bottle. Only friends you've added can read it. No cell, wifi, or GPS needed.
+Post where you'll be and until when. Your phone carries it through the crowd over bluetooth mesh, like a message in a bottle. Only friends you've added can read it. No cell, wifi, or GPS needed.
 
 ## How it works
 

@@ -4,24 +4,6 @@
 
 Post where you'll be and until when. Your phone carries it through the crowd. Only friends you've added can read your heres — other phones can help carry them, but can't read them.
 
-This is **not** chat, not a map, not live tracking. The core object is a **here**: a short, timestamped, encrypted status. See [`hereherehere_prd.md`](../../hereherehere_prd.md) for the full product spec.
-
-## Status
-
-MVP product layer, built behind a swappable transport boundary.
-
-- ✅ Onboarding (display name → explainer carousel → event packs)
-- ✅ Local cryptographic identity (Ed25519 signing + X25519 encryption), keys in the device keychain
-- ✅ People board (latest here per friend, expiry/quiet rules)
-- ✅ Compose flow (where → until → note → post) with event-pack autocomplete
-- ✅ Friend codes (QR show / scan / add, one-way semantics, friend link)
-- ✅ Crowd refresh (session UI, progress, results)
-- ✅ Portola event pack (stages, sets, crowd-refresh times)
-- ✅ **Real end-to-end crypto** over a **simulated mesh** (`MockTransport`)
-- ⬜ Real BLE transport (native module + dev client) — drops in behind the `Transport` interface
-- ⬜ Scheduled crowd-refresh local notifications
-- ⬜ Friend-link deep linking / universal links
-
 ## Running it
 
 This build runs in **Expo Go** (no native dev client needed yet — crypto is pure JS, storage/camera use Expo modules).
