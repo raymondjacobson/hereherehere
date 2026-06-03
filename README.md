@@ -5,15 +5,14 @@
 <h1 align="center">hereherehere</h1>
 
 <p align="center">
-  <strong>Find your friends when service disappears.</strong><br/>
   A way to find each other in crowded places when cell service and wifi are down.
 </p>
 
 ---
 
-Post where you'll be and until when — your phone carries it through the crowd, like a message in a bottle. Only friends you've added can read it. No cell, wifi, or GPS needed.
+[hereherehere.app](hereherehere.app)
 
-This is **not** chat, not a map, not live tracking. The core object is a **here**: a short, timestamped, encrypted status saying where you'll be and until when. Full spec in [`hereherehere_prd.md`](./hereherehere_prd.md).
+Post where you'll be and until when. Your phone carries it through the crowd, like a message in a bottle. Only friends you've added can read it. No cell, wifi, or GPS needed.
 
 ## How it works
 
