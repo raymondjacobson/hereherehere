@@ -22,15 +22,15 @@ const KEY = 'hhh.dev.syntheticPeers.v1';
 const NAMES = ['Maya', 'Sam', 'Tariq', 'Priya', 'Jonah', 'Wren', 'Diego', 'Noor'];
 
 const PLACES = [
-  'Crane Stage',
   'Pier Stage',
+  'Crane Stage',
   'Warehouse',
-  'Gobi Tent',
-  'Fcukers @ Crane Stage',
+  'Ship Tent',
+  'Despacio',
   'the food trucks',
-  'water station by Pier',
+  'water refill by the Pier Stage',
   'merch tent',
-  'main disco ball',
+  'the entrance',
 ];
 
 const NOTES = [

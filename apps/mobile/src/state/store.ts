@@ -12,6 +12,7 @@ import { generatePeers, loadPeers, savePeers, clearPeers } from '@/transport/syn
 import { seedDemoStatuses, seedRelayTraffic } from '@/transport/demoSeed';
 import { clearEngine, createEngine, getEngine } from './engine';
 import { loadSecrets, storeSecrets, clearSecrets } from './secrets';
+import { syncCrowdRefreshReminders } from '@/notifications';
 
 export type HereRecord = Here & { receivedAt?: number };
 
@@ -113,6 +114,9 @@ export const useStore = create<AppState>()(
           transport.configure(engine);
           if (isSimulatedTransport) mockTransport.setPeers(peers, engine.asFriend());
         }
+        // Keep the OS's pending crowd-refresh reminders in step with the
+        // installed packs (refreshes that already passed are dropped).
+        void syncCrowdRefreshReminders(get().installedPacks);
       },
 
       createIdentity: async (displayName) => {
@@ -147,7 +151,11 @@ export const useStore = create<AppState>()(
       completeOnboarding: () => set({ onboardingComplete: true }),
 
       setBluetoothEnabled: (v) => set({ bluetoothEnabled: v }),
-      setNotificationsEnabled: (v) => set({ notificationsEnabled: v }),
+      setNotificationsEnabled: (v) => {
+        set({ notificationsEnabled: v });
+        // Permission just changed: (re)schedule reminders for installed packs.
+        void syncCrowdRefreshReminders(get().installedPacks);
+      },
       markPermissionsPrompted: () => set({ permissionsPrompted: true }),
 
       addFriend: (payload) => {
@@ -233,11 +241,15 @@ export const useStore = create<AppState>()(
 
       installPack: (pack) => {
         const existing = get().installedPacks.filter((p) => p.id !== pack.id);
-        set({ installedPacks: [...existing, pack] });
+        const installedPacks = [...existing, pack];
+        set({ installedPacks });
+        void syncCrowdRefreshReminders(installedPacks);
       },
 
       uninstallPack: (id) => {
-        set({ installedPacks: get().installedPacks.filter((p) => p.id !== id) });
+        const installedPacks = get().installedPacks.filter((p) => p.id !== id);
+        set({ installedPacks });
+        void syncCrowdRefreshReminders(installedPacks);
       },
 
       seedDemoFriends: async () => {
@@ -275,6 +287,7 @@ export const useStore = create<AppState>()(
         await clearSecrets();
         await clearPeers();
         clearEngine();
+        await syncCrowdRefreshReminders([]);
         set({
           identity: null,
           onboardingComplete: false,

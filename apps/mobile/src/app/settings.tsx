@@ -15,7 +15,7 @@ import { useStore } from '@/state/store';
 import { AVAILABLE_PACKS } from '@/data/packs/portola';
 import { PERMISSIONS } from '@/permissions/catalog';
 import { defaultEmojiFor } from '@/data/emoji';
-import { transport } from '@/transport';
+import { transport, isSimulatedTransport } from '@/transport';
 import type { TransportDebug } from '@/transport/types';
 import Constants from 'expo-constants';
 import { Image } from 'expo-image';
@@ -91,10 +91,10 @@ function ImpactCard() {
       </View>
       <Text variant="callout" color="textSecondary" style={{ marginTop: spacing.md }}>
         {sent === 0
-          ? 'When you’re near other phones, hereherehere quietly carries the crowd’s encrypted messages onward — even ones you can’t read. Your count grows here.'
+          ? 'When you’re near other phones, hereherehere quietly carries the crowd’s encrypted messages onward, even ones you can’t read. Your count grows here.'
           : `You’ve helped carry ${sent.toLocaleString()} encrypted message${sent === 1 ? '' : 's'} for people you may never meet${
               carrying > 0 ? `, ${carrying} moving through you right now` : ''
-            }. You can’t read them — that’s the point.`}
+            }. You can’t read them. That’s the point.`}
       </Text>
     </Card>
   );
@@ -225,7 +225,7 @@ export default function SettingsScreen() {
           </View>
         </Section>
 
-        <Section title="Bluetooth (debug)">
+        <Section title="Bluetooth status">
           <BleDebug />
         </Section>
 
@@ -252,7 +252,9 @@ export default function SettingsScreen() {
         <Section title="Try it out">
           <Card muted>
             <Text variant="callout" color="textSecondary" style={{ marginBottom: spacing.md }}>
-              This build uses a simulated mesh. Add a few demo friends, then run a crowd refresh to watch their messages arrive — through the real encryption path.
+              {isSimulatedTransport
+                ? 'This build uses a simulated mesh. Add a few demo friends, then pull down on the board to watch their messages arrive through the real encryption path.'
+                : 'No friends nearby yet? Add a few demo friends to see how the board fills in. Their messages go through the same encryption path as real ones.'}
             </Text>
             <Button
               title={seeded ? 'Demo friends added ✓' : 'Add demo friends'}

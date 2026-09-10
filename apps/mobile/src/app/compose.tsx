@@ -73,7 +73,9 @@ export default function ComposeScreen() {
 
   function pickSuggestion(label: string, setEnd?: number) {
     setWhereText(label);
-    if (setEnd && setEnd > startsAt) setEndsAt(clampEnd(setEnd));
+    // Default "until" to the set's end, but only when that's a sane window from
+    // now (a set days away would otherwise pin the end to the 12h cap).
+    if (setEnd && setEnd > startsAt && setEnd - startsAt <= MAX_DURATION) setEndsAt(clampEnd(setEnd));
     setPickerOpen(false);
   }
 
@@ -283,7 +285,7 @@ export default function ComposeScreen() {
                           {s.label}
                         </Text>
                         {s.sublabel ? (
-                          <Text variant="meta" color="textTertiary" style={{ marginLeft: spacing.md }}>
+                          <Text variant="meta" color="textTertiary" numberOfLines={1} style={{ marginLeft: spacing.md, maxWidth: '55%' }}>
                             {s.sublabel}
                           </Text>
                         ) : null}

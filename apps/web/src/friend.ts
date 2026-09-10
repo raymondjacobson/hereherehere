@@ -7,9 +7,9 @@
  * (deep link), falling back to install instructions.
  */
 
-// Where to send people who don't have the app yet. Swap for the real
-// App Store / TestFlight URL before launch.
-const STORE_URL = 'https://hereherehere.app';
+// Where to send people who don't have the app yet. TestFlight until the App
+// Store listing is live; then swap for the apps.apple.com URL.
+const STORE_URL = 'https://testflight.apple.com/join/6fAgFBMx';
 const APP_SCHEME = 'hereherehere';
 
 type FriendPayload = { v: number; n: string; s: string; b: string; t: number };
@@ -87,8 +87,11 @@ function render() {
   $('fingerprint').textContent = fingerprint(payload.s);
   $('lede').textContent = 'Open hereherehere to add them. They’ll need to add you too.';
 
-  // Deep link back into the app, preserving the payload in the fragment.
-  const deepLink = `${APP_SCHEME}://friend#${window.location.hash.replace(/^#/, '')}`;
+  // Deep link back into the app. The payload goes in a query param on the
+  // custom scheme (the router exposes it as a param; a fragment would be
+  // dropped). It still never touches a server: custom-scheme URLs go straight
+  // to the app.
+  const deepLink = `${APP_SCHEME}://friend?p=${encodeURIComponent(window.location.hash.replace(/^#/, ''))}`;
   open.href = deepLink;
   open.textContent = `Add ${payload.n} in the app`;
 }

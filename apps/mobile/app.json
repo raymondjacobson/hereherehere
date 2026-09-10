@@ -9,7 +9,7 @@
     "userInterfaceStyle": "light",
     "ios": {
       "bundleIdentifier": "app.hereherehere.ios",
-      "supportsTablet": true,
+      "supportsTablet": false,
       "infoPlist": {
         "NSBluetoothAlwaysUsageDescription": "hereherehere uses Bluetooth to pass messages between nearby phones when there’s no signal. It never tracks your location.",
         "NSBluetoothPeripheralUsageDescription": "hereherehere uses Bluetooth to pass messages between nearby phones when there’s no signal. It never tracks your location.",
@@ -24,7 +24,7 @@
         "foregroundImage": "./assets/images/android-icon-foreground.png"
       },
       "predictiveBackGestureEnabled": false,
-      "permissions": ["android.permission.CAMERA", "android.permission.RECORD_AUDIO"]
+      "permissions": ["android.permission.CAMERA"]
     },
     "web": {
       "output": "static",
@@ -36,7 +36,8 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "hereherehere uses the camera only to scan friend codes. No photos are taken or stored."
+          "cameraPermission": "hereherehere uses the camera only to scan friend codes. No photos are taken or stored.",
+          "recordAudioAndroid": false
         }
       ],
       [
