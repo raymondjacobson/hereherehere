@@ -9,6 +9,7 @@ Copy to paste into App Store Connect. Character limits are Apple's; counts are n
 | Name (30) | hereherehere |
 | Subtitle (30) | Find your friends, no signal |
 | Bundle ID | app.hereherehere.ios |
+| Apple ID (App Store Connect) | 6776151903 |
 | SKU | hereherehere-ios |
 | Primary category | Social Networking |
 | Secondary category | Utilities |
